@@ -10,9 +10,9 @@
 	#pragma loadlib most_valuable_player
 #endif
 
-
 enum WinScenario
 {
+	NO_SCENARIO = -1,
 	TERO_MVP = 0,
 	CT_MVP,
 	KILLER_MVP_TERO,
