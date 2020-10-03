@@ -1,7 +1,10 @@
 /* Sublime AMXX Editor v4.2 */
 
-/* Uncomment this line if you want to use only ReAPI */
+/* Uncomment this line if you want to use only ReAPI Support*/
 //#define USE_REAPI
+
+/*Comment the below line if you are not testing the plugin. When testing, debug information will be printed to all players */
+//#define TESTING
 
 #include <amxmodx>
 #include <amxmisc>
@@ -35,7 +38,7 @@ new g_iMaxClients
 new bool:g_bIsBombPlanted
 new bool:g_bIsBombDefused
 
-new WinScenario:g_iScenario
+new WinScenario:g_iScenario = NO_SCENARIO
 
 new g_fwScenario
 new g_iForwardResult
@@ -58,6 +61,12 @@ public plugin_init()
 		register_event("SendAudio", "event_ctwin", "a", "2=%!MRAD_ctwin");
 	#endif
 
+	register_logevent("logev_roundstart", 2, "1=Round_Start")
+
+	#if defined TESTING
+	register_clcmd("say /test", "clcmd_say_test")
+	#endif
+
 	g_fwScenario = CreateMultiForward("mvp_scenario", ET_IGNORE, FP_CELL)
 
 	g_iMaxClients = get_maxplayers()
@@ -74,7 +83,7 @@ public plugin_natives()
 }
 
 #if defined USE_REAPI
-public RG_Restart_Post()
+public RG_RestartRound_Post()
 {
 	static players[32], inum, player
 	get_players(players, inum)
@@ -89,7 +98,7 @@ public RG_Restart_Post()
 	g_iTopKiller = 0
 	g_iBombPlanter = 0
 	g_iBombDefuser = 0
-
+	g_iScenario = NO_SCENARIO
 	g_bIsBombDefused = false;
 	g_bIsBombPlanted = false;
 }
@@ -124,47 +133,34 @@ public RG_Player_Killed_Post(pVictim, pAttacker, iGibs)
 
 public RG_Round_End(WinStatus:status, ScenarioEventEndRound:event, Float:fDelay)
 {
-	if(status == WINSTATUS_DRAW || status == WINSTATUS_NONE)
-		return HC_CONTINUE
-
-	switch(g_iScenario)
+	switch(status)
 	{
-		case TERO_MVP:
+		case WINSTATUS_TERRORISTS:
 		{
-			if(g_bIsBombPlanted && IsPlayer(g_iBombPlanter))
+			if(g_bIsBombPlanted)
 			{
-				static szName[32]
-				get_user_name(g_iBombDefuser, szName, charsmax(szName))
-				client_print_color(0, print_chat, "^1[^4MVP^1] Player of the round: ^3%s^1 for planting the bomb", szName)
+				g_iScenario = TERO_MVP
+			}
+			else
+			{
+				g_iScenario = KILLER_MVP_TERO
 			}
 		}
-		case CT_MVP:
+		case WINSTATUS_CTS:
 		{
-			if(g_bIsBombDefused && IsPlayer(g_iBombDefuser))
+			if(g_bIsBombDefused)
 			{
-				static szName[32]
-				get_user_name(g_iBombDefuser, szName, charsmax(szName))
-				client_print_color(0, print_chat, "^1[^4MVP^1] Player of the round: ^3%s^1 for defusing the bomb", szName)
+				g_iScenario = CT_MVP
 			}
-		}
-		case KILLER_MVP_TERO:
-		{
-			CalculateTopKiller(KILLER_MVP_TERO)
-			static szName[32]
-			get_user_name(g_iTopKiller, szName, charsmax(szName))
-			client_print_color(0, print_chat, "^1[^4MVP^1] Player of the round: ^3%s^1 for killing %i players", szName, g_iKills[g_iTopKiller])
-		}
-		case KILLER_MVP_CT:
-		{
-			CalculateTopKiller(KILLER_MVP_CT)
-
-			static szName[32]
-			get_user_name(g_iTopKiller, szName, charsmax(szName))
-			client_print_color(0, print_chat, "^1[^4MVP^1] Player of the round: ^3%s^1 for killing %i players", szName, g_iKills[g_iTopKiller])
+			else
+			{
+				g_iScenario = KILLER_MVP_CT
+			}
 		}
 	}
+	set_task(1.0, "task_check_scenario")
 
-	ExecuteForward(g_fwScenario, g_iForwardResult, WinScenario:g_iScenario)
+	client_print(0, print_chat, "rg_round_end called")
 
 	return HC_CONTINUE
 }
@@ -217,6 +213,58 @@ public Ham_Player_Killed_Post(iVictim, iAttacker)
 
 public logev_roundend()
 {
+	set_task(1.0, "task_check_scenario")
+
+	return PLUGIN_CONTINUE
+}
+
+public event_twin()
+{
+	if(g_bIsBombPlanted)
+	{
+		g_iScenario = TERO_MVP
+	}
+	else
+	{
+		g_iScenario = KILLER_MVP_TERO
+	}
+}
+
+public event_ctwin()
+{
+	if(g_bIsBombDefused)
+	{
+		g_iScenario = CT_MVP
+	}
+	else
+	{
+		g_iScenario = KILLER_MVP_CT
+	}
+}
+#endif
+
+public logev_roundstart()
+{
+	static players[32], inum, player
+	get_players(players, inum)
+
+	for(new i; i < inum; i++)
+	{
+		player = players[i]
+
+		arrayset(g_iDamage[player], 0, sizeof(g_iDamage[]))
+		arrayset(g_iKills[player], 0, sizeof(g_iKills[]))
+	}
+	g_iTopKiller = 0
+	g_iBombPlanter = 0
+	g_iBombDefuser = 0
+	g_iScenario = NO_SCENARIO
+	g_bIsBombDefused = false;
+	g_bIsBombPlanted = false;
+}
+
+public task_check_scenario()
+{
 	switch(g_iScenario)
 	{
 		case TERO_MVP:
@@ -226,6 +274,10 @@ public logev_roundend()
 				static szName[32]
 				get_user_name(g_iBombPlanter, szName, charsmax(szName))
 				client_print_color(0, print_chat, "^1[^4MVP^1] Player of the round: ^3%s^1 for planting the bomb", szName)
+			
+				#if defined TESTING
+				client_print(0, print_chat, "Scenario: TERO_MVP %d", g_iScenario)
+				#endif
 			}
 		}
 		case CT_MVP:
@@ -235,45 +287,43 @@ public logev_roundend()
 				static szName[32]
 				get_user_name(g_iBombDefuser, szName, charsmax(szName))
 				client_print_color(0, print_chat, "^1[^4MVP^1] Player of the round: ^3%s^1 for defusing the bomb", szName)
+			
+				#if defined TESTING
+				client_print(0, print_chat, "Scenario: CT_MVP %d", g_iScenario )
+				#endif
 			}
 		}
 		case KILLER_MVP_TERO:
 		{
 			CalculateTopKiller(KILLER_MVP_TERO)
-			static szName[32]
-			get_user_name(g_iTopKiller, szName, charsmax(szName))
-			client_print_color(0, print_chat, "^1[^4MVP^1] Player of the round: ^3%s^1 for killing %i players", szName, g_iKills[g_iTopKiller])
+
+			#if defined TESTING
+			client_print(0, print_chat, "Scenario: KILLER_MVP_TERO %d", g_iScenario)
+			#endif
+		
 		}
 		case KILLER_MVP_CT:
 		{
 			CalculateTopKiller(KILLER_MVP_CT)
-			static szName[32]
-			get_user_name(g_iTopKiller, szName, charsmax(szName))
-			client_print_color(0, print_chat, "^1[^4MVP^1] Player of the round: ^3%s^1 for killing %i players", szName, g_iKills[g_iTopKiller])
+
+			#if defined TESTING
+			client_print(0, print_chat, "Scenario: KILLER_MVP_CT %d", g_iScenario)
+			#endif
 		}
 	}
 
 	ExecuteForward(g_fwScenario, g_iForwardResult, WinScenario:g_iScenario)
-
-	return PLUGIN_CONTINUE
 }
-
-public event_twin()
-{
-	g_iScenario = TERO_MVP
-}
-
-public event_ctwin()
-{
-	g_iScenario = CT_MVP
-}
-#endif
 
 public bomb_explode(id)
 {
 	g_iBombPlanter = id
 	g_bIsBombPlanted = true
 	g_iScenario = TERO_MVP
+
+	#if defined TESTING
+	client_print(id, print_chat, "bomb_explode forward called")
+	#endif
 }
 
 public bomb_defused(id)
@@ -281,10 +331,17 @@ public bomb_defused(id)
 	g_iBombDefuser = id
 	g_bIsBombDefused = true
 	g_iScenario = CT_MVP
+
+	#if defined TESTING
+	client_print(id, print_chat, "bomb_defused forward called")
+	#endif
 }
 
 stock CalculateTopKiller(WinScenario:status)
 {
+	if(g_bIsBombDefused && g_iBombDefuser || g_bIsBombPlanted && g_iBombPlanter)
+		return PLUGIN_HANDLED
+
 	static players[32], inum
 
 	switch(status)
@@ -317,7 +374,20 @@ stock CalculateTopKiller(WinScenario:status)
 	{
 		g_iTopKiller = iTempID
 	}
+
+	static szName[32]
+	get_user_name(g_iTopKiller, szName, charsmax(szName))
+	client_print_color(0, print_chat, "^1[^4MVP^1] Player of the round: ^3%s^1 for killing %i players", szName, g_iKills[g_iTopKiller])
+
+	return PLUGIN_HANDLED
 }
+
+#if defined TESTING
+public clcmd_say_test(id)
+{
+	client_print(id, print_chat, "Scenario: %d", g_iScenario)
+}
+#endif
 
 public native_get_user_mvp_kills(iPluginID, iParamNum)
 {
