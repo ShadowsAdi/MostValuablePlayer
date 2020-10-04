@@ -47,6 +47,8 @@ public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR)
 	
+	create_cvar("mvp_otr", VERSION, FCVAR_SERVER|FCVAR_EXTDLL|FCVAR_UNLOGGED|FCVAR_SPONLY)
+	
 	#if defined USE_REAPI
 		RegisterHookChain(RG_CSGameRules_RestartRound, "RG_RestartRound_Post", 1)
 		RegisterHookChain(RG_CBasePlayer_TakeDamage, "RG_Player_Damage_Post", 1)
