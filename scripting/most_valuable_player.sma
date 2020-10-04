@@ -23,7 +23,7 @@ const m_LastHitGroup = 75
 #endif
 
 #define PLUGIN  "Most Valuable Player"
-#define VERSION "1.0"
+#define VERSION "1.1-stable"
 #define AUTHOR  "Shadows Adi"
 
 #define IsPlayer(%1)	(1 <= %1 <= g_iMaxClients)
@@ -48,7 +48,7 @@ public plugin_init()
 	register_plugin(PLUGIN, VERSION, AUTHOR)
 	
 	create_cvar("mvp_otr", VERSION, FCVAR_SERVER|FCVAR_EXTDLL|FCVAR_UNLOGGED|FCVAR_SPONLY)
-	
+
 	#if defined USE_REAPI
 		RegisterHookChain(RG_CSGameRules_RestartRound, "RG_RestartRound_Post", 1)
 		RegisterHookChain(RG_CBasePlayer_TakeDamage, "RG_Player_Damage_Post", 1)
@@ -59,8 +59,8 @@ public plugin_init()
 		RegisterHam(Ham_TakeDamage, "player", "Ham_Player_Damage_Post", 1)
 		RegisterHam(Ham_Killed, "player", "Ham_Player_Killed_Post", 1)
 		register_logevent("logev_roundend", 2, "1=Round_End")
-		register_event("SendAudio", "event_twin", "a", "2&%!MRAD_terwin");
-		register_event("SendAudio", "event_ctwin", "a", "2=%!MRAD_ctwin");
+		register_event("SendAudio", "event_twin", "a", "2&%!MRAD_terwin")
+		register_event("SendAudio", "event_ctwin", "a", "2=%!MRAD_ctwin")
 	#endif
 
 	register_logevent("logev_roundstart", 2, "1=Round_Start")
@@ -101,8 +101,8 @@ public RG_RestartRound_Post()
 	g_iBombPlanter = 0
 	g_iBombDefuser = 0
 	g_iScenario = NO_SCENARIO
-	g_bIsBombDefused = false;
-	g_bIsBombPlanted = false;
+	g_bIsBombDefused = false
+	g_bIsBombPlanted = false
 }
 
 public RG_Player_Damage_Post(iVictim, iInflictor, iAttacker, Float:fDamage)
@@ -261,8 +261,8 @@ public logev_roundstart()
 	g_iBombPlanter = 0
 	g_iBombDefuser = 0
 	g_iScenario = NO_SCENARIO
-	g_bIsBombDefused = false;
-	g_bIsBombPlanted = false;
+	g_bIsBombDefused = false
+	g_bIsBombPlanted = false
 }
 
 public task_check_scenario()
@@ -397,8 +397,8 @@ public native_get_user_mvp_kills(iPluginID, iParamNum)
 
 	if(!IsPlayer(id))
 	{
-		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id);
-		return -1;
+		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
+		return -1
 	}
 
 	return g_iKills[g_iTopKiller]
@@ -409,8 +409,8 @@ public native_get_user_mvp_topkiller(iPluginID, iParamNum)
 
 	if(!IsPlayer(id))
 	{
-		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id);
-		return -1;
+		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
+		return -1
 	}
 
 	return g_iTopKiller
@@ -422,8 +422,8 @@ public native_get_user_mvp_damage(iPluginID, iParamNum)
 
 	if(!IsPlayer(id))
 	{
-		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id);
-		return -1;
+		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
+		return -1
 	}
 
 	return g_iDamage[g_iTopKiller][iDamage]
@@ -435,8 +435,8 @@ public native_get_user_mvp_hs_damage(iPluginID, iParamNum)
 
 	if(!IsPlayer(id))
 	{
-		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id);
-		return -1;
+		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
+		return -1
 	}
 
 	return g_iDamage[g_iTopKiller][iHeadshotsDmg]
