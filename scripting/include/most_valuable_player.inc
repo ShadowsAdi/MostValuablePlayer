@@ -16,13 +16,8 @@ enum WinScenario
 	TERO_MVP = 0,
 	CT_MVP,
 	KILLER_MVP_TERO,
-	KILLER_MVP_CT
-}
-
-enum _:DamageData
-{
-	iDamage = 0,
-	iHeadshotsDmg
+	KILLER_MVP_CT,
+	KILLER_MVP /* Just for default: case in PlayTrack(), unusable */
 }
 
 /**
@@ -31,7 +26,7 @@ enum _:DamageData
  * @param scenario		Scenario index. See WinScenario enum
  * @return				Scenario index.
  */
-forward csgor_user_logging_in(WinScenario:scenario);
+forward mvp_scenario(WinScenario:scenario);
 
 /**
  * Returns player's MVP kills.
