@@ -38,11 +38,12 @@ const m_LastHitGroup = 75
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= g_iMaxClients)
-#define MVP_CHAT_TAG					"[^4MVP^1]"
-#define MVP_HUD_TAG						"[MVP]"
 
 #define NATIVE_ERROR					-1
 
+new const CHAT_PREFIX[]			=		"CHAT_PREFIX"
+new const HUD_PREFIX[]			=		"HUD_PREFIX"
+new const MENU_PREFIX[]			=		"MENU_PREFIX"
 new const SAVE_TYPE[] 			=		"SAVE_TYPE"
 new const MYSQL_HOSTNAME[]		=		"MYSQL_HOST"
 new const MYSQL_USERNAME[]		=		"MYSQL_USER"
@@ -80,6 +81,13 @@ enum _:Tracks
 {
 	szNAME[32],
 	szPATH[64]
+}
+
+enum _:Prefix
+{
+	PREFIX_CHAT[16],
+	PREFIX_HUD[16],
+	PREFIX_MENU[16]
 }
 
 enum _:HudSettings
@@ -132,6 +140,7 @@ new g_fwScenario
 new g_iForwardResult
 
 new g_iMessageType
+new g_szPrefix[Prefix]
 new g_iHudColor[HudSettings]
 new g_fHudPos[HudSettings]
 new g_iTracksNum
@@ -270,7 +279,19 @@ public plugin_precache()
 						if(szValue[0] == EOS || !szValue[0])
 							continue
 
-						if(equal(szString, SAVE_TYPE))
+						if(equal(szString, CHAT_PREFIX))
+						{
+							copy(g_szPrefix[PREFIX_CHAT], charsmax(g_szPrefix[PREFIX_CHAT]), szValue)
+						}
+						else if(equal(szString, HUD_PREFIX))
+						{
+							copy(g_szPrefix[PREFIX_HUD], charsmax(g_szPrefix[PREFIX_HUD]), szValue)
+						}
+						else if(equal(szString, MENU_PREFIX))
+						{
+							copy(g_szPrefix[PREFIX_MENU], charsmax(g_szPrefix[PREFIX_MENU]), szValue)
+						}
+						else if(equal(szString, SAVE_TYPE))
 						{
 							if(0 <= str_to_num(szValue) <= 1)
 							{
@@ -642,17 +663,17 @@ public task_check_scenario()
 				{
 					case MVP_CHAT_MSG:
 					{
-						CC_SendMessage(0, "^1%s %L", MVP_CHAT_TAG, LANG_PLAYER, "NO_MVP_SHOW_CHAT")
+						CC_SendMessage(0, "^1%s %L", g_szPrefix[PREFIX_CHAT], LANG_PLAYER, "NO_MVP_SHOW_CHAT")
 					}
 					case MVP_DHUD_MSG:
 					{
 						set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-						show_dhudmessage(0, "%s %L", MVP_HUD_TAG, LANG_PLAYER, "NO_MVP_SHOW_HUD")
+						show_dhudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "NO_MVP_SHOW_HUD")
 					}
 					case MVP_HUD_MSG:
 					{
 						set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-						show_hudmessage(0, "%s %L", MVP_HUD_TAG, LANG_PLAYER, "NO_MVP_SHOW_HUD")
+						show_hudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "NO_MVP_SHOW_HUD")
 					}
 				}
 			}
@@ -665,17 +686,17 @@ public task_check_scenario()
 				{
 					case MVP_CHAT_MSG:
 					{
-						CC_SendMessage(0, "^1%s %L", MVP_CHAT_TAG, LANG_PLAYER, "MVP_PLANTER_SHOW_CHAT", g_szName[g_iBombPlanter])
+						CC_SendMessage(0, "^1%s %L", g_szPrefix[PREFIX_CHAT], LANG_PLAYER, "MVP_PLANTER_SHOW_CHAT", g_szName[g_iBombPlanter])
 					}
 					case MVP_DHUD_MSG:
 					{
 						set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-						show_dhudmessage(0, "%s %L", MVP_HUD_TAG, LANG_PLAYER, "MVP_PLANTER_SHOW_HUD", g_szName[g_iBombPlanter])
+						show_dhudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_PLANTER_SHOW_HUD", g_szName[g_iBombPlanter])
 					}
 					case MVP_HUD_MSG:
 					{
 						set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-						show_hudmessage(0, "%s %L", MVP_HUD_TAG, LANG_PLAYER, "MVP_PLANTER_SHOW_HUD", g_szName[g_iBombPlanter])
+						show_hudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_PLANTER_SHOW_HUD", g_szName[g_iBombPlanter])
 					}
 				}
 
@@ -694,17 +715,17 @@ public task_check_scenario()
 				{
 					case MVP_CHAT_MSG:
 					{
-						CC_SendMessage(0, "^1%s %L", MVP_CHAT_TAG, LANG_PLAYER, "MVP_DEFUSER_SHOW_CHAT", g_szName[g_iBombDefuser])
+						CC_SendMessage(0, "^1%s %L", g_szPrefix[PREFIX_CHAT], LANG_PLAYER, "MVP_DEFUSER_SHOW_CHAT", g_szName[g_iBombDefuser])
 					}
 					case MVP_DHUD_MSG:
 					{
 						set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-						show_dhudmessage(0, "%s %L", MVP_HUD_TAG, LANG_PLAYER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_iBombDefuser])
+						show_dhudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_iBombDefuser])
 					}
 					case MVP_HUD_MSG:
 					{
 						set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-						show_hudmessage(0, "%s %L", MVP_HUD_TAG, LANG_PLAYER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_iBombDefuser])
+						show_hudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_iBombDefuser])
 					}
 				}
 
@@ -809,17 +830,17 @@ stock CalculateTopKiller(WinScenario:status)
 			{
 				case MVP_CHAT_MSG:
 				{
-					CC_SendMessage(0, "^1%s %L", MVP_CHAT_TAG, LANG_PLAYER, "MVP_KILLER_SHOW_CHAT")
+					CC_SendMessage(0, "^1%s %L", g_szPrefix[PREFIX_CHAT], LANG_PLAYER, "MVP_KILLER_SHOW_CHAT", g_szName[g_iTopKiller], g_iKills[g_iTopKiller])
 				}
 				case MVP_DHUD_MSG:
 				{
 					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_dhudmessage(0, "%s %L", MVP_HUD_TAG, LANG_PLAYER, "MVP_KILLER_SHOW_HUD")
+					show_dhudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_KILLER_SHOW_HUD", g_szName[g_iTopKiller], g_iKills[g_iTopKiller])
 				}
 				case MVP_HUD_MSG:
 				{
 					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_hudmessage(0, "%s %L", MVP_HUD_TAG, LANG_PLAYER, "MVP_KILLER_SHOW_HUD")
+					show_hudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_KILLER_SHOW_HUD", g_szName[g_iTopKiller], g_iKills[g_iTopKiller])
 				}
 			}
 
@@ -831,17 +852,17 @@ stock CalculateTopKiller(WinScenario:status)
 			{
 				case MVP_CHAT_MSG:
 				{
-					CC_SendMessage(0, "^1%s %L", MVP_CHAT_TAG, LANG_PLAYER, "NO_MVP_SHOW_CHAT")
+					CC_SendMessage(0, "^1%s %L", g_szPrefix[PREFIX_CHAT], LANG_PLAYER, "NO_MVP_SHOW_CHAT")
 				}
 				case MVP_DHUD_MSG:
 				{
 					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_dhudmessage(0, "%s %L", MVP_HUD_TAG, LANG_PLAYER, "NO_MVP_SHOW_HUD")
+					show_dhudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "NO_MVP_SHOW_HUD")
 				}
 				case MVP_HUD_MSG:
 				{
 					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_hudmessage(0, "%s %L", MVP_HUD_TAG, LANG_PLAYER, "NO_MVP_SHOW_HUD")
+					show_hudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "NO_MVP_SHOW_HUD")
 				}
 			}
 		}
@@ -850,7 +871,7 @@ stock CalculateTopKiller(WinScenario:status)
 	return PLUGIN_HANDLED
 }
 
-public PlayTrack(WinScenario:iType)
+stock PlayTrack(WinScenario:iType)
 {
 	static iPlayers[MAX_PLAYERS], iPlayer, iNum
 	get_players(iPlayers, iNum)
@@ -875,7 +896,7 @@ public PlayTrack(WinScenario:iType)
 						ArrayGetArray(g_aTracks, i, eTrack)
 						if(i == g_iUserSelectedTrack[g_iBombPlanter])
 						{
-							client_cmd(iPlayer, "mp3 play %s", eTrack[szPATH])
+							client_cmd(iPlayer, "mp3 play ^"%s^"", eTrack[szPATH])
 						}
 					}
 					case CT_MVP:
@@ -883,15 +904,15 @@ public PlayTrack(WinScenario:iType)
 						ArrayGetArray(g_aTracks, i, eTrack)
 						if(i == g_iUserSelectedTrack[g_iBombDefuser])
 						{
-							client_cmd(iPlayer, "mp3 play %s", eTrack[szPATH])
+							client_cmd(iPlayer, "mp3 play ^"%s^"", eTrack[szPATH])
 						}
 					}
-					default:
+					case KILLER_MVP:
 					{
 						ArrayGetArray(g_aTracks, i, eTrack)
 						if(i == g_iUserSelectedTrack[g_iTopKiller])
 						{
-							client_cmd(iPlayer, "mp3 play %s", eTrack[szPATH])
+							client_cmd(iPlayer, "mp3 play ^"%s^"", eTrack[szPATH])
 						}
 					}
 				}
@@ -1028,7 +1049,7 @@ public Clcmd_MVPMenu(id)
 {
 	new szTemp[128]
 
-	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", MVP_HUD_TAG, LANG_PLAYER, "MVP_MENU_TITLE")
+	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_MENU_TITLE")
 	new menu = menu_create(szTemp, "mvp_menu_handle")
 
 	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_PLAYER, "MVP_CHOOSE_TRACK")
@@ -1037,7 +1058,6 @@ public Clcmd_MVPMenu(id)
 	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_PLAYER, "MVP_TRACK_LIST")
 	menu_additem(menu, szTemp)
 
-	/* Aici faci cu nVault sau MySQL prin variabila stocata in fisierul .ini  */
 	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_PLAYER, "MVP_SOUNDS_ON_OFF", g_bDisableTracks[id] ? "OFF" : "ON")
 	menu_additem(menu, szTemp)
 
@@ -1081,7 +1101,7 @@ public mvp_menu_handle(id, menu, item)
 public Clcmd_ChooseTrack(id)
 {
 	new szTemp[128], eTrack[Tracks], bool:bUsed
-	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", MVP_HUD_TAG, LANG_PLAYER, "MVP_CHOOSE_TRACK")
+	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_CHOOSE_TRACK")
 	new menu = menu_create(szTemp, "choose_track_handle")
 
 	for(new i; i < g_iTracksNum; i++)
@@ -1140,7 +1160,7 @@ public choose_track_handle(id, menu, item)
 public Clcmd_TrackList(id)
 {
 	new szTemp[128], eTrack[Tracks]
-	formatex(szTemp, charsmax(szTemp), "%s %L", MVP_HUD_TAG, LANG_PLAYER, "MVP_TRACK_LIST_TITLE")
+	formatex(szTemp, charsmax(szTemp), "%s %L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_TRACK_LIST_TITLE")
 	new menu = menu_create(szTemp, "clcmd_tracklist_handle")
 	for(new i; i < g_iTracksNum; i++)
 	{
