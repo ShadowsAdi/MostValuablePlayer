@@ -45,11 +45,11 @@ new const CHAT_PREFIX[]			=		"CHAT_PREFIX"
 new const HUD_PREFIX[]			=		"HUD_PREFIX"
 new const MENU_PREFIX[]			=		"MENU_PREFIX"
 new const SAVE_TYPE[] 			=		"SAVE_TYPE"
-new const MYSQL_HOSTNAME[]		=		"MYSQL_HOST"
-new const MYSQL_USERNAME[]		=		"MYSQL_USER"
-new const MYSQL_PASSWORD[]		=		"MYSQL_PASS"
-new const MYSQL_DATABASE[]		=		"MYSQL_DATABASE"
-new const MYSQL_DBTABLE[]		=		"MYSQL_TABLE"
+new const SQL_HOSTNAME[]		=		"SQL_HOST"
+new const SQL_USERNAME[]		=		"SQL_USER"
+new const SQL_PASSWORD[]		=		"SQL_PASS"
+new const SQL_DATABASE[]		=		"SQL_DATABASE"
+new const SQL_DBTABLE[]			=		"SQL_TABLE"
 new const NVAULT_DATABASE[]		=		"NVAULT_DATABASE"
 new const INSTANT_SAVE[]		=		"INSTANT_SAVE"
 new const MESSAGE_TYPE[]		=		"MESSAGE_TYPE"
@@ -112,7 +112,8 @@ enum _:DBSettings
 enum
 {
 	NVAULT = 0,
-	SQL = 1
+	SQL = 1,
+	SQL_LITE = 2
 }
 
 new g_eDBConfig[DBSettings]
@@ -293,7 +294,7 @@ public plugin_precache()
 						}
 						else if(equal(szString, SAVE_TYPE))
 						{
-							if(0 <= str_to_num(szValue) <= 1)
+							if(0 <= str_to_num(szValue) <= 2)
 							{
 								g_iSaveType = str_to_num(szValue)
 							}
@@ -302,35 +303,35 @@ public plugin_precache()
 								g_iSaveType = 0
 							}
 						}
-						else if(equal(szString, MYSQL_HOSTNAME))
+						else if(equal(szString, SQL_HOSTNAME))
 						{
 							if(szValue[0] != EOS)
 							{
 								copy(g_eDBConfig[MYSQL_HOST], charsmax(g_eDBConfig[MYSQL_HOST]), szValue)
 							}
 						}
-						else if(equal(szString, MYSQL_USERNAME))
+						else if(equal(szString, SQL_USERNAME))
 						{
 							if(szValue[0] != EOS)
 							{
 								copy(g_eDBConfig[MYSQL_USER], charsmax(g_eDBConfig[MYSQL_USER]), szValue)
 							}
 						}
-						else if(equal(szString, MYSQL_PASSWORD))
+						else if(equal(szString, SQL_PASSWORD))
 						{
 							if(szValue[0] != EOS)
 							{
 								copy(g_eDBConfig[MYSQL_PASS], charsmax(g_eDBConfig[MYSQL_PASS]), szValue)
 							}
 						}
-						else if(equal(szString, MYSQL_DATABASE))
+						else if(equal(szString, SQL_DATABASE))
 						{
 							if(szValue[0] != EOS)
 							{
 								copy(g_eDBConfig[MYSQL_DB], charsmax(g_eDBConfig[MYSQL_DB]), szValue)
 							}
 						}
-						else if(equal(szString, MYSQL_DBTABLE))
+						else if(equal(szString, SQL_DBTABLE))
 						{
 							if(szValue[0] != EOS)
 							{
@@ -400,8 +401,13 @@ public DetectSaveType()
 				set_fail_state("MVP: Failed to open the vault: %s", g_hVault);
 			}
 		}
-		case SQL:
+		case SQL, SQL_LITE:
 		{
+			if(g_iSaveType == SQL_LITE)
+			{
+				SQL_SetAffinity("sqlite")
+			}
+
 			g_hSqlTuple = SQL_MakeDbTuple(g_eDBConfig[MYSQL_HOST], g_eDBConfig[MYSQL_USER], g_eDBConfig[MYSQL_PASS], g_eDBConfig[MYSQL_DB])
 
 			new iError, Handle:iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
