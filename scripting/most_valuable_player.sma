@@ -119,6 +119,7 @@ enum
 new g_eDBConfig[DBSettings]
 
 new Array:g_aTracks
+new bool:g_bExistTracks
 
 new g_iDamage[MAX_PLAYERS + 1][DamageData]
 new g_iKills[MAX_PLAYERS + 1]
@@ -384,6 +385,11 @@ public plugin_precache()
 		}
 	}
 	fclose(iFile)
+
+	if(g_iTracksNum > 0)
+	{
+		g_bExistTracks = true
+	}
 
 	DetectSaveType()
 }
@@ -891,15 +897,11 @@ stock PlayTrack(WinScenario:iType)
 		{
 			for(new i; i < g_iTracksNum; i++)
 			{
+				ArrayGetArray(g_aTracks, i, eTrack)
 				switch(iType)
 				{
-					case NO_SCENARIO: 
-					{
-						continue
-					}
 					case TERO_MVP:
 					{
-						ArrayGetArray(g_aTracks, i, eTrack)
 						if(i == g_iUserSelectedTrack[g_iBombPlanter])
 						{
 							client_cmd(iPlayer, "mp3 play ^"%s^"", eTrack[szPATH])
@@ -907,7 +909,6 @@ stock PlayTrack(WinScenario:iType)
 					}
 					case CT_MVP:
 					{
-						ArrayGetArray(g_aTracks, i, eTrack)
 						if(i == g_iUserSelectedTrack[g_iBombDefuser])
 						{
 							client_cmd(iPlayer, "mp3 play ^"%s^"", eTrack[szPATH])
@@ -915,7 +916,6 @@ stock PlayTrack(WinScenario:iType)
 					}
 					case KILLER_MVP:
 					{
-						ArrayGetArray(g_aTracks, i, eTrack)
 						if(i == g_iUserSelectedTrack[g_iTopKiller])
 						{
 							client_cmd(iPlayer, "mp3 play ^"%s^"", eTrack[szPATH])
@@ -954,7 +954,7 @@ public LoadPlayerData(id)
 			new iData = nvault_get(g_hVault, g_szAuthID[id])
 			g_iUserSelectedTrack[id] = iData
 		}
-		case SQL:
+		case SQL, SQL_LITE:
 		{
 			new iError, Handle:iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
 
@@ -1020,7 +1020,7 @@ public SavePlayerData(id)
 
 			nvault_set(g_hVault, g_szAuthID[id], szData)
 		}
-		case SQL:
+		case SQL, SQL_LITE:
 		{
 			new szQuery[256], iError, Handle:iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
 
@@ -1110,18 +1110,26 @@ public Clcmd_ChooseTrack(id)
 	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_CHOOSE_TRACK")
 	new menu = menu_create(szTemp, "choose_track_handle")
 
-	for(new i; i < g_iTracksNum; i++)
+	if(g_bExistTracks)
 	{
-		ArrayGetArray(g_aTracks, i, eTrack)
-		if(i == g_iUserSelectedTrack[id])
+		for(new i; i < g_iTracksNum; i++)
 		{
-			bUsed = true
+			ArrayGetArray(g_aTracks, i, eTrack)
+			if(i == g_iUserSelectedTrack[id])
+			{
+				bUsed = true
+			}
+			else
+			{
+				bUsed = false
+			}
+			formatex(szTemp, charsmax(szTemp), "\w%s \r%s", eTrack[szNAME], bUsed == true ? "#" : "")
+			menu_additem(menu, szTemp)
 		}
-		else
-		{
-			bUsed = false
-		}
-		formatex(szTemp, charsmax(szTemp), "\w%s \r%s", eTrack[szNAME], bUsed == true ? "#" : "")
+	}
+	else
+	{
+		formatex(szTemp, charsmax(szTemp), "\w%L", LANG_SERVER, "MVP_NO_TRACKS_LOADED")
 		menu_additem(menu, szTemp)
 	}
 
@@ -1133,6 +1141,11 @@ public choose_track_handle(id, menu, item)
 	if(item == MENU_EXIT || !is_user_connected(id))
 	{
 		return MenuExit(menu)
+	}
+
+	if(!g_bExistTracks)
+	{
+		goto __EXIT
 	}
 
 	new bool:bSameTrack, eTracks[Tracks]
@@ -1160,6 +1173,7 @@ public choose_track_handle(id, menu, item)
 		SavePlayerData(id)
 	}
 
+	__EXIT:
 	return MenuExit(menu)
 }
 
@@ -1168,19 +1182,27 @@ public Clcmd_TrackList(id)
 	new szTemp[128], eTrack[Tracks]
 	formatex(szTemp, charsmax(szTemp), "%s %L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_TRACK_LIST_TITLE")
 	new menu = menu_create(szTemp, "clcmd_tracklist_handle")
-	for(new i; i < g_iTracksNum; i++)
+
+	if(g_bExistTracks)
 	{
-		ArrayGetArray(g_aTracks, i, eTrack)
-		formatex(szTemp, charsmax(szTemp), "%s", eTrack[szNAME])
+		for(new i; i < g_iTracksNum; i++)
+		{
+			ArrayGetArray(g_aTracks, i, eTrack)
+			formatex(szTemp, charsmax(szTemp), "\w%s", eTrack[szNAME])
+			menu_additem(menu, szTemp)
+		}
+	}
+	else 
+	{
+		formatex(szTemp, charsmax(szTemp), "\w%L", LANG_SERVER, "MVP_NO_TRACKS_LOADED")
 		menu_additem(menu, szTemp)
 	}
-
 	menu_display(id, menu)
 }
 
 public clcmd_tracklist_handle(id, menu, item)
 {
-	if(item == MENU_EXIT || is_user_connected(id))
+	if(item == MENU_EXIT || !is_user_connected(id))
 	{
 		return MenuExit(menu)
 	}
@@ -1189,10 +1211,13 @@ public clcmd_tracklist_handle(id, menu, item)
 	{
 		default:
 		{
-			Clcmd_MVPMenu(id)
+			if(g_bExistTracks)
+			{
+				Clcmd_MVPMenu(id)
+			} 
 		}
 	}
-	
+
 	return MenuExit(menu)
 }
 
