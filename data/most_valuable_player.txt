@@ -14,3 +14,22 @@ MVP_PLANTER_SHOW_CHAT = Player of the round: ^3%s^1 for ^4planting the bomb.
 MVP_PLANTER_SHOW_HUD = Player of the round: %s for planting the bomb.
 NO_MVP_SHOW_CHAT = Player of the round: ^3No Player^1 was ^4good enough this round.
 NO_MVP_SHOW_HUD = Player of the round: No Player was good enough this round.
+MVP_NO_TRACKS_LOADED = No tracks loaded.
+
+[ro]
+MVP_MENU_TITLE = Meniu MVP
+MVP_CHOOSE_TRACK = Alege o melodie
+MVP_TRACK_LIST = Vezi lista melodiilor
+MVP_SOUNDS_ON_OFF = Sunete MVP: \y%s
+MVP_TRACK_X_SELECTED = Ai selectat melodia: ^4%s
+MVP_TRACK_X_DESELECTED = Ai deselectat melodia: ^4%s
+MVP_TRACK_LIST_TITLE = Lista Melodiilor
+MVP_KILLER_SHOW_CHAT = Jucatorul acestei runde: ^3%s^1 pentru ^4uciderea a %i jucatori.
+MVP_KILLER_SHOW_HUD = Jucatorul acestei runde: %s pentru uciderea a %i jucatori.
+MVP_DEFUSER_SHOW_CHAT = Jucatorul acestei runde: ^3%s^1 pentru ^4dezamorsarea bombei.
+MVP_DEFUSER_SHOW_HUD = Jucatorul acestei runde: %s pentru dezamorsarea bombei.
+MVP_PLANTER_SHOW_CHAT = Jucatorul acestei runde: ^3%s^1 pentru ^4plantarea bombei.
+MVP_PLANTER_SHOW_HUD = Jucatorul acestei runde: %s pentru plantarea bombei.
+NO_MVP_SHOW_CHAT = Jucatorul acestei runde: ^3Niciun Jucator^1 nu a fost destul de ^4bun aceasta runda.
+NO_MVP_SHOW_HUD = Jucatorul acestei runde: Niciun Jucator nu a fost destul de bun aceasta runda.
+MVP_NO_TRACKS_LOADED =Nicio melodie incarcata.
