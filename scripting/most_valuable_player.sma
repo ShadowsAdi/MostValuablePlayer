@@ -219,7 +219,6 @@ public plugin_precache()
 	static szConfigsDir[64], szFileName[64]
 	get_configsdir(szConfigsDir, charsmax(szConfigsDir))
 	formatex(szFileName, charsmax(szFileName), "%s/MVPTracks.ini", szConfigsDir)
-	server_print("%s", szFileName)
 
 	new iFile = fopen(szFileName, "rt")
 
