@@ -34,7 +34,7 @@ const m_LastHitGroup = 75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"1.5"
+#define VERSION 						"1.6"
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= g_iMaxClients)
@@ -79,7 +79,7 @@ enum
 
 enum _:Tracks
 {
-	szNAME[32],
+	szNAME[54],
 	szPATH[64]
 }
 
@@ -151,6 +151,7 @@ new g_iSaveInstant
 
 new Handle:g_hSqlTuple
 new g_szSqlError[512]
+new Handle:g_iSqlConnection
 new g_hVault
 
 public plugin_init()
@@ -204,9 +205,10 @@ public plugin_end()
 
 	if(g_iSaveType)
 	{
-		SQL_FreeHandle(g_hSqlTuple)
+		FreeHandle(g_hSqlTuple)
+		FreeHandle(g_iSqlConnection)
 	}
-	else 
+	else
 	{
 		nvault_close(g_hVault)
 	}
@@ -416,15 +418,16 @@ public DetectSaveType()
 
 			g_hSqlTuple = SQL_MakeDbTuple(g_eDBConfig[MYSQL_HOST], g_eDBConfig[MYSQL_USER], g_eDBConfig[MYSQL_PASS], g_eDBConfig[MYSQL_DB])
 
-			new iError, Handle:iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
+			new iError
+			g_iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
 
-			if(iSqlConnection == Empty_Handle)
+			if(g_iSqlConnection == Empty_Handle)
 			{
 				log_to_file(LOG_FILE, "MVP: Failed to connect to database. Make sure databse settings are right!")
-				FreeQuery(iSqlConnection)
+				FreeHandle(g_iSqlConnection)
 			}
 
-			new Handle:iQueries = SQL_PrepareQuery(iSqlConnection, "CREATE TABLE IF NOT EXISTS `%s` (`SteamID` VARCHAR(32) NOT NULL, `Track` INT(2) NOT NULL, PRIMARY KEY(SteamID));", g_eDBConfig[MYSQL_TABLE])
+			new Handle:iQueries = SQL_PrepareQuery(g_iSqlConnection, "CREATE TABLE IF NOT EXISTS `%s` (`SteamID` VARCHAR(32) NOT NULL, `Track` INT(2) NOT NULL, `Disabled` INT(2) NOT NULL, PRIMARY KEY(SteamID));", g_eDBConfig[MYSQL_TABLE])
 		
 			if(!SQL_Execute(iQueries))
 			{
@@ -951,40 +954,38 @@ public LoadPlayerData(id)
 	{
 		case NVAULT:
 		{
-			new iData = nvault_get(g_hVault, g_szAuthID[id])
-			g_iUserSelectedTrack[id] = iData
+			new szData[12], iTimestamp, szBuffer[2][12]
+
+			if(nvault_lookup(g_hVault, g_szAuthID[id], szData, charsmax(szData), iTimestamp))
+			{
+				strtok2(szData, szBuffer[0], charsmax(szBuffer[]), szBuffer[1], charsmax(szBuffer[]), ',', TRIM_INNER)
+				g_iUserSelectedTrack[id] = str_to_num(szBuffer[0])
+				g_bDisableTracks[id] = str_to_num(szBuffer[1]) == 1 ? true : false
+			}
 		}
 		case SQL, SQL_LITE:
 		{
-			new iError, Handle:iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
-
-			if(iSqlConnection == Empty_Handle)
-			{
-				log_to_file(LOG_FILE, g_szSqlError)
-				FreeQuery(iSqlConnection)
-			}
-
-			new Handle:iQuery = SQL_PrepareQuery(iSqlConnection, "SELECT * FROM `%s` WHERE `SteamID` = '%s';", g_eDBConfig[MYSQL_TABLE], g_szAuthID[id])
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `%s` WHERE `SteamID` = '%s';", g_eDBConfig[MYSQL_TABLE], g_szAuthID[id])
 		
 			if(!SQL_Execute(iQuery))
 			{
 				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
 				log_to_file(LOG_FILE, g_szSqlError)
-				FreeQuery(iQuery)
+				FreeHandle(iQuery)
 			}
 
 			new szQuery[256]
 			new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? false : true
    			if(bFoundData)
    			{
-   				formatex(szQuery, charsmax(szQuery), "INSERT INTO %s (`SteamID`,`Track`) VALUES ('%s','0');", g_eDBConfig[MYSQL_TABLE], g_szAuthID[id])
+   				formatex(szQuery, charsmax(szQuery), "INSERT INTO %s (`SteamID`,`Track`, `Disabled`) VALUES ('%s','0','0');", g_eDBConfig[MYSQL_TABLE], g_szAuthID[id])
    			}
    			else
    			{
-   				formatex(szQuery, charsmax(szQuery), "SELECT Track FROM %s WHERE `SteamID` = '%s';", g_eDBConfig[MYSQL_TABLE], g_szAuthID[id])
+   				formatex(szQuery, charsmax(szQuery), "SELECT `Track`, `Disabled` FROM %s WHERE `SteamID` = '%s';", g_eDBConfig[MYSQL_TABLE], g_szAuthID[id])
    			}
 
-   			iQuery = SQL_PrepareQuery(iSqlConnection, szQuery)
+   			iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
 
    			if(!SQL_Execute(iQuery))
 			{
@@ -997,11 +998,11 @@ public LoadPlayerData(id)
 				if(SQL_NumResults(iQuery) > 0)
 				{
 					g_iUserSelectedTrack[id] = SQL_ReadResult(iQuery, 0)
+					g_bDisableTracks[id] = SQL_ReadResult(iQuery, 1) == 1 ? true : false
 				}
 			}
 
-			FreeQuery(iSqlConnection)
-			FreeQuery(iQuery)
+			FreeHandle(iQuery)
 		}
 	}
 
@@ -1016,21 +1017,15 @@ public SavePlayerData(id)
 		{
 			new szData[64]
 
-			formatex(szData, charsmax(szData), "%i", g_iUserSelectedTrack[id])
+			formatex(szData, charsmax(szData), "%i,%i", g_iUserSelectedTrack[id], g_bDisableTracks[id] ? 1 : 0)
 
 			nvault_set(g_hVault, g_szAuthID[id], szData)
+
 		}
 		case SQL, SQL_LITE:
 		{
-			new szQuery[256], iError, Handle:iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
-
-			if(iSqlConnection == Empty_Handle)
-			{
-				log_to_file(LOG_FILE, g_szSqlError)
-				FreeQuery(iSqlConnection)
-			}
-
-			formatex(szQuery, charsmax(szQuery), "UPDATE `%s` SET `Track`='%i' WHERE `SteamID`='%s';", g_eDBConfig[MYSQL_TABLE], g_iUserSelectedTrack[id], g_szAuthID[id])
+			new szQuery[256]
+			formatex(szQuery, charsmax(szQuery), "UPDATE `%s` SET `Track`='%i', `Disabled`='%i' WHERE `SteamID`='%s';", g_eDBConfig[MYSQL_TABLE], g_iUserSelectedTrack[id], g_bDisableTracks[id] ? 1 : 0, g_szAuthID[id])
 			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 		}
 	}
@@ -1228,7 +1223,7 @@ stock MenuExit(menu)
 	return PLUGIN_HANDLED
 }
 
-public FreeQuery(Handle:iType)
+public FreeHandle(Handle:iType)
 {
 	SQL_FreeHandle(iType)
 }
