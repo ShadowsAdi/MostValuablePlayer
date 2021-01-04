@@ -33,3 +33,22 @@ MVP_PLANTER_SHOW_HUD = Jucatorul acestei runde: %s pentru plantarea bombei.
 NO_MVP_SHOW_CHAT = Jucatorul acestei runde: ^3Niciun Jucator^1 nu a fost destul de ^4bun aceasta runda.
 NO_MVP_SHOW_HUD = Jucatorul acestei runde: Niciun Jucator nu a fost destul de bun aceasta runda.
 MVP_NO_TRACKS_LOADED =Nicio melodie incarcata.
+
+// Thanks to [teol](https://forums.alliedmods.net/member.php?u=62500)
+[fr]
+MVP_MENU_TITLE = Menu MVP
+MVP_CHOOSE_TRACK = Choisir une piste audio
+MVP_TRACK_LIST = Voir liste de pistes audio
+MVP_SOUNDS_ON_OFF = Pistes audio MVP: \y%s
+MVP_TRACK_X_SELECTED = Vous avez sélectionné la piste: ^4%s
+MVP_TRACK_X_DESELECTED = Vous avez sélectionné la piste: ^4%s
+MVP_TRACK_LIST_TITLE = Liste de pistes audio
+MVP_KILLER_SHOW_CHAT = Joueur du round: ^3%s^1 pour avoir ^4tué %i joueurs.
+MVP_KILLER_SHOW_HUD = Joueur du round: %s pour avoir tué %i joueurs.
+MVP_DEFUSER_SHOW_CHAT = Joueur du round: ^3%s^1 pour avoir ^4désamorcé la bombe.
+MVP_DEFUSER_SHOW_HUD = Joueur du round: %s pour avoir désamorcé la bombe.
+MVP_PLANTER_SHOW_CHAT = Joueur du round: ^3%s^1 pour avoir ^4planté la bombe.
+MVP_PLANTER_SHOW_HUD = Joueur du round: %s pour avoir planté la bombe.
+NO_MVP_SHOW_CHAT = Joueur du round: ^3Aucun joueur^1 n'a été ^4assez bon pendant ce round.
+NO_MVP_SHOW_HUD = Joueur du round: Aucun joueur n'a été assez bon pendant ce round.
+MVP_NO_TRACKS_LOADED = Aucune piste audio chargée.
