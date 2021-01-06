@@ -52,3 +52,22 @@ MVP_PLANTER_SHOW_HUD = Joueur du round: %s pour avoir planté la bombe.
 NO_MVP_SHOW_CHAT = Joueur du round: ^3Aucun joueur^1 n'a été ^4assez bon pendant ce round.
 NO_MVP_SHOW_HUD = Joueur du round: Aucun joueur n'a été assez bon pendant ce round.
 MVP_NO_TRACKS_LOADED = Aucune piste audio chargée.
+
+// Thanks to [Rivotril](https://forums.alliedmods.net/member.php?u=246699)
+[es]
+MVP_MENU_TITLE = Menu de MVP
+MVP_CHOOSE_TRACK = Elegi una cancion
+MVP_TRACK_LIST = Ver lista de canciones
+MVP_SOUNDS_ON_OFF = Sonidos de MVP: \y%s
+MVP_TRACK_X_SELECTED = Elegiste la cancion: ^4%s
+MVP_TRACK_X_DESELECTED = Removiste la cancion: ^4%s
+MVP_TRACK_LIST_TITLE = Lista de Canciones
+MVP_KILLER_SHOW_CHAT = Jugador de la ronda: ^3%s^1 por ^4matar %i jugadores.
+MVP_KILLER_SHOW_HUD = Jugador de la ronda: %s por matar %i jugadores.
+MVP_DEFUSER_SHOW_CHAT = Jugador de la ronda: ^3%s^1 por ^4defusear la bomba.
+MVP_DEFUSER_SHOW_HUD = Jugador de la ronda: %s por defusear la bomba.
+MVP_PLANTER_SHOW_CHAT = Jugador de la ronda: ^3%s^1 por ^4plantar la bomba.
+MVP_PLANTER_SHOW_HUD = Jugador de la ronda: %s por plantar la bomba.
+NO_MVP_SHOW_CHAT = Jugador de la ronda: ^3Ningun jugador^1 fue lo ^4suficientemente bueno en esta ronda.
+NO_MVP_SHOW_HUD = Jugador de la ronda: Ningun jugador fue lo suficientemente bueno en esta ronda.
+MVP_NO_TRACKS_LOADED = No se cargo ninguna cancion.
