@@ -71,3 +71,22 @@ MVP_PLANTER_SHOW_HUD = Jugador de la ronda: %s por plantar la bomba.
 NO_MVP_SHOW_CHAT = Jugador de la ronda: ^3Ningun jugador^1 fue lo ^4suficientemente bueno en esta ronda.
 NO_MVP_SHOW_HUD = Jugador de la ronda: Ningun jugador fue lo suficientemente bueno en esta ronda.
 MVP_NO_TRACKS_LOADED = No se cargo ninguna cancion.
+
+// Thanks to[Napoleon_be](https://forums.alliedmods.net/member.php?u=149700)
+[nl]
+MVP_MENU_TITLE = MVP Menu
+MVP_CHOOSE_TRACK = Kies een nummer
+MVP_TRACK_LIST = Bekijk nummer lijst
+MVP_SOUNDS_ON_OFF = MVP Geluiden: \y%s
+MVP_TRACK_X_SELECTED = Je hebt het volgende nummer geselecteerd: ^4%s
+MVP_TRACK_X_DESELECTED = Je hebt het volgende nummer gedeselecteerd: ^4%s
+MVP_TRACK_LIST_TITLE = Nummers lijst
+MVP_KILLER_SHOW_CHAT = Beste speler deze ronde: ^3%s^1 voor het ^4doden van %i spelers.
+MVP_KILLER_SHOW_HUD = Beste speler deze ronde: %s voor het doden van %i spelers.
+MVP_DEFUSER_SHOW_CHAT = Beste speler deze ronde: ^3%s^1 voor het ^4onschadelijk maken van de bom.
+MVP_DEFUSER_SHOW_HUD = Beste speler deze ronde: %s voor het onschadelijk maken van de bom.
+MVP_PLANTER_SHOW_CHAT = Beste speler deze ronde: ^3%s^1 voor het planten van de ^4bom.
+MVP_PLANTER_SHOW_HUD = Beste speler deze ronde: %s voor het planten van de bom.
+NO_MVP_SHOW_CHAT = Beste speler deze ronde: ^3Er was geen enkele speler^1 goed genoeg ^4deze ronde.
+NO_MVP_SHOW_HUD = Beste speler deze ronde: Er was geen enkele speler goed genoeg deze ronde.
+MVP_NO_TRACKS_LOADED = Geen nummers geladen.
