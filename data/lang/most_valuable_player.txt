@@ -90,3 +90,22 @@ MVP_PLANTER_SHOW_HUD = Beste speler deze ronde: %s voor het planten van de bom.
 NO_MVP_SHOW_CHAT = Beste speler deze ronde: ^3Er was geen enkele speler^1 goed genoeg ^4deze ronde.
 NO_MVP_SHOW_HUD = Beste speler deze ronde: Er was geen enkele speler goed genoeg deze ronde.
 MVP_NO_TRACKS_LOADED = Geen nummers geladen.
+
+// Thanks to[Snake.](https://forums.alliedmods.net/member.php?u=280676)
+[tr]
+MVP_MENU_TITLE = Edo Menu
+MVP_CHOOSE_TRACK = Bir parca sec
+MVP_TRACK_LIST = Parca listesini gor
+MVP_SOUNDS_ON_OFF = EDO Sesleri: \y%s
+MVP_TRACK_X_SELECTED = Sectigin parca: ^4%s
+MVP_TRACK_X_DESELECTED = Secimini kaldirdigin parca: ^4%s
+MVP_TRACK_LIST_TITLE = Parca Listesi
+MVP_KILLER_SHOW_CHAT = Raundun oyuncusu: ^3% ^1(^4%i kill^1)
+MVP_KILLER_SHOW_HUD = Raundun oyuncusu: %s (%i kill)
+MVP_DEFUSER_SHOW_CHAT = Raundun oyuncusu: ^3%s ^1(^4bombayi cozme^1)
+MVP_DEFUSER_SHOW_HUD = Raundun oyuncusu: %s (bombayi cozme)
+MVP_PLANTER_SHOW_CHAT = Raundun oyuncusu: ^3%s ^1(^4bombayi yerlestirme^1)
+MVP_PLANTER_SHOW_HUD = Raundun oyuncusu: %s (bombayi yerlestirme)
+NO_MVP_SHOW_CHAT = Raundun oyuncusu: Bu raund ^4yeteri kadar iyi oyuncu ^1yoktu
+NO_MVP_SHOW_HUD = Raundun oyuncusu: Bu raund yeteri kadar iyi oyuncu yoktu
+MVP_NO_TRACKS_LOADED = Hic yuklu parca yok
