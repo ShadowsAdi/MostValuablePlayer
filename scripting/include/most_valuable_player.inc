@@ -59,3 +59,11 @@ native get_user_mvp_damage(id);
  * @return			Player index. -1 on error.
  */
 native get_user_mvp_hs_damage(id);
+
+/**
+ * Returns Player's MVPs.
+ *
+ * @param id		Player index.
+ * @return			Player index. -1 on error.
+ */
+native get_user_mvps(id);
