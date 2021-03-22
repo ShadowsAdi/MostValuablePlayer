@@ -129,7 +129,7 @@ new g_iKills[MAX_PLAYERS + 1]
 new g_iPlayerMVP[MAX_PLAYERS + 1]
 new g_szName[MAX_PLAYERS + 1][MAX_NAME_LENGTH]
 new g_szAuthID[MAX_PLAYERS + 1][20]
-new bool:g_bDisableTracks[MAX_PLAYERS]
+new bool:g_bDisableTracks[MAX_PLAYERS + 1]
 new g_iUserSelectedTrack[MAX_PLAYERS + 1]
 new g_iTopKiller
 new g_iBombPlanter
