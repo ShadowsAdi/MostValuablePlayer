@@ -1019,7 +1019,7 @@ public LoadPlayerData(id)
 		}
 		case SQL, SQL_LITE:
 		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `%s` WHERE `AuthID` = '%s';", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `%s` WHERE `AuthID` = ^"%s^";", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
 		
 			if(!SQL_Execute(iQuery))
 			{
@@ -1032,11 +1032,11 @@ public LoadPlayerData(id)
 			new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? false : true
    			if(bFoundData)
    			{
-   				formatex(szQuery, charsmax(szQuery), "INSERT INTO %s (`AuthID`, `Player MVP`, `Track`, `Disabled`) VALUES ('%s', '0', '0', '0');", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
+   				formatex(szQuery, charsmax(szQuery), "INSERT INTO `%s` (`AuthID`, `Player MVP`, `Track`, `Disabled`) VALUES (^"%s^", '0', '0', '0');", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
    			}
    			else
    			{
-   				formatex(szQuery, charsmax(szQuery), "SELECT `Player MVP`, `Track`, `Disabled` FROM %s WHERE `AuthID` = '%s';", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
+   				formatex(szQuery, charsmax(szQuery), "SELECT `Player MVP`, `Track`, `Disabled` FROM %s WHERE `AuthID` = ^"%s^";", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
    			}
 
    			iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
@@ -1079,7 +1079,7 @@ public SavePlayerData(id)
 		case SQL, SQL_LITE:
 		{
 			new szQuery[256]
-			formatex(szQuery, charsmax(szQuery), "UPDATE `%s` SET `Player MVP`='%i', `Track`='%i', `Disabled`='%i' WHERE `AuthID`='%s';", g_eDBConfig[MYSQL_TABLE], g_iPlayerMVP[id], g_iUserSelectedTrack[id], g_bDisableTracks[id] ? 1 : 0, g_bAuthData ? g_szAuthID[id] : g_szName[id])
+			formatex(szQuery, charsmax(szQuery), "UPDATE `%s` SET `Player MVP`='%i', `Track`='%i', `Disabled`='%i' WHERE `AuthID`=^"%s^";", g_eDBConfig[MYSQL_TABLE], g_iPlayerMVP[id], g_iUserSelectedTrack[id], g_bDisableTracks[id] ? 1 : 0, g_bAuthData ? g_szAuthID[id] : g_szName[id])
 			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
 		}
 	}
