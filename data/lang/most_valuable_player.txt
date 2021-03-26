@@ -109,3 +109,22 @@ MVP_PLANTER_SHOW_HUD = Raundun oyuncusu: %s (bombayi yerlestirme)
 NO_MVP_SHOW_CHAT = Raundun oyuncusu: Bu raund ^4yeteri kadar iyi oyuncu ^1yoktu
 NO_MVP_SHOW_HUD = Raundun oyuncusu: Bu raund yeteri kadar iyi oyuncu yoktu
 MVP_NO_TRACKS_LOADED = Hic yuklu parca yok
+
+// Thanks to[Godofwar](https://forums.alliedmods.net/member.php?u=266045)
+[de]
+MVP_MENU_TITLE = MVP Menü
+MVP_CHOOSE_TRACK = Wähle einen Titel
+MVP_TRACK_LIST = Titelliste anzeigen 
+MVP_SOUNDS_ON_OFF = MVP Sounds: \y%s
+MVP_TRACK_X_SELECTED = Du hast folgenden Titel ausgewählt:  ^4%s
+MVP_TRACK_X_DESELECTED = Du hast folgenden Titel abgewählt: ^4%s
+MVP_TRACK_LIST_TITLE = Titelliste
+MVP_KILLER_SHOW_CHAT = ^3Spieler der Runde ist: %s ^1für das ^4töten von %i Spielern.
+MVP_KILLER_SHOW_HUD = ^3Spieler der Runde ist: %s ^1für das ^4töten von %i Spielern.
+MVP_DEFUSER_SHOW_CHAT = ^3Spieler der Runde ist%s ^1fürs ^4entschärfern der Bombe.
+MVP_DEFUSER_SHOW_HUD = Spieler der Runde ist: %s fürs entschärfen der Bombe.
+MVP_PLANTER_SHOW_CHAT = ^3Spieler der Runde ist: %s ^1fürs ^4legen der Bombe.
+MVP_PLANTER_SHOW_HUD = Spieler der Runde ist: %s fürs legen der Bombe.
+NO_MVP_SHOW_CHAT = Spieler der Runde: ^3Kein Spieler^1 war ^4gut genug in dieser Runde.
+NO_MVP_SHOW_HUD = Spieler der Runde: Kein Spieler war in dieser Runde gut genug.
+MVP_NO_TRACKS_LOADED = Keine Titel geladen.
