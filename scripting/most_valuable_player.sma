@@ -5,7 +5,7 @@
 /*Comment the below line if you are not testing the plugin. When testing, debug information will be printed to all players */
 //#define TESTING
 
-#define CC_COLORS_TYPE CC_COLORS_STANDARD
+#define CC_COLORS_TYPE CC_COLORS_NAMED_SHORT
 
 #include <amxmodx>
 #include <amxmisc>
