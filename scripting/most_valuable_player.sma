@@ -60,6 +60,8 @@ new const HUD_POSITION[]		= 		"HUD_POSITION"
 new const MENU_COMMANDS[]		=		"MENU_COMMANDS"
 new const LOG_FILE[]			= 		"mvp_errors.log"
 
+new MenuColors[][] = {"\r", "\y", "\d", "\w", "\R"}
+
 enum _:DamageData
 {
 	iDamage = 0,
@@ -489,7 +491,6 @@ public client_disconnected(id)
 	{
 		g_iBombPlanter = -1
 	}
-
 
 	if(!is_user_bot(id) || !is_user_hltv(id))
 	{
@@ -1204,21 +1205,21 @@ public choose_track_handle(id, menu, item)
 		bSameTrack = true 
 	}
 
+	ArrayGetArray(g_aTracks, item, eTracks)
+
 	if(!bSameTrack)
 	{
-		ArrayGetArray(g_aTracks, item, eTracks)
 		g_iUserSelectedTrack[id] = item
-		CC_SendMessage(id, "^1%L", LANG_PLAYER, "MVP_TRACK_X_SELECTED", eTracks[szNAME])
+		CC_SendMessage(id, "^1%L", LANG_PLAYER, "MVP_TRACK_X_SELECTED", ReplaceMColors(eTracks[szNAME], charsmax(eTracks[szNAME])))
 	}
 	else
 	{
-		ArrayGetArray(g_aTracks, item, eTracks)
 		g_iUserSelectedTrack[id] = -1
-		CC_SendMessage(id, "^1%L", LANG_PLAYER, "MVP_TRACK_X_DESELECTED", eTracks[szNAME])
+		CC_SendMessage(id, "^1%L", LANG_PLAYER, "MVP_TRACK_X_DESELECTED", ReplaceMColors(eTracks[szNAME], charsmax(eTracks[szNAME])))
 	}
 
 	if(g_iSaveInstant)
-	{
+	{ 
 		SavePlayerData(id)
 	}
 
@@ -1275,6 +1276,19 @@ stock MenuExit(menu)
 	menu_destroy(menu)
 
 	return PLUGIN_HANDLED
+}
+
+stock ReplaceMColors(szString[], iLen)
+{
+	new szTemp[64]
+	for(new i; i < sizeof(MenuColors); i++)
+	{
+		replace_all(szString, iLen, MenuColors[i], "")
+	}
+
+	formatex(szTemp, iLen, szString)
+
+	return szTemp
 }
 
 public native_get_user_mvp_kills(iPluginID, iParamNum)
