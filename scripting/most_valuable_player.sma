@@ -35,7 +35,7 @@ const m_LastHitGroup = 75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"1.7"
+#define VERSION 						"1.8"
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= MAX_PLAYERS)
