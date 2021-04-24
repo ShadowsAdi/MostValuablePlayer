@@ -35,7 +35,7 @@ const m_LastHitGroup = 75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"1.8"
+#define VERSION 						"1.7"
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= MAX_PLAYERS)
@@ -120,42 +120,43 @@ enum
 	SQL_LITE = 2
 }
 
-new g_eDBConfig[DBSettings]
+new WinScenario:g_iScenario = NO_SCENARIO
+
 new bool:g_bAuthData
-
-new Array:g_aTracks
 new bool:g_bExistTracks
-
-new g_iDamage[MAX_PLAYERS + 1][DamageData]
-new g_iKills[MAX_PLAYERS + 1]
-new g_iPlayerMVP[MAX_PLAYERS + 1]
-new g_szName[MAX_PLAYERS + 1][MAX_NAME_LENGTH]
-new g_szAuthID[MAX_PLAYERS + 1][20]
 new bool:g_bDisableTracks[MAX_PLAYERS + 1]
-new g_iUserSelectedTrack[MAX_PLAYERS + 1]
-new g_iTopKiller
-new g_iBombPlanter
-new g_iBombDefuser
-
 new bool:g_bIsBombPlanted
 new bool:g_bIsBombDefused
 
-new WinScenario:g_iScenario = NO_SCENARIO
+new Array:g_aTracks
+
+new g_eDBConfig[DBSettings]
+new g_iDamage[MAX_PLAYERS + 1][DamageData]
+
+new g_szName[MAX_PLAYERS + 1][MAX_NAME_LENGTH]
+new g_szAuthID[MAX_PLAYERS + 1][20]
+new g_szPrefix[Prefix]
+
+new g_iPlayerMVP[MAX_PLAYERS + 1]
+new g_iKills[MAX_PLAYERS + 1]
+new g_iUserSelectedTrack[MAX_PLAYERS + 1]
+new g_iHudColor[HudSettings]
+new g_iTracksNum
+new g_iSaveType
+new g_iSaveInstant
+new g_iTopKiller
+new g_iMessageType
+new g_iBombPlanter
+new g_iBombDefuser
 
 new g_fwScenario
 new g_iForwardResult
 
-new g_iMessageType
-new g_szPrefix[Prefix]
-new g_iHudColor[HudSettings]
 new g_fHudPos[HudSettings]
-new g_iTracksNum
-new g_iSaveType
-new g_iSaveInstant
 
 new Handle:g_hSqlTuple
-new g_szSqlError[512]
 new Handle:g_iSqlConnection
+new g_szSqlError[512]
 new g_hVault
 
 new g_IsConnected
@@ -483,11 +484,13 @@ public client_disconnected(id)
 	{
 		g_iTopKiller = -1
 	}
-	else if(g_bIsBombDefused && g_iBombDefuser == id)
+	
+	if(g_bIsBombDefused && g_iBombDefuser == id)
 	{
 		g_iBombDefuser = -1
 	}
-	else if(g_bIsBombPlanted && g_iBombPlanter == id)
+	
+	if(g_bIsBombPlanted && g_iBombPlanter == id)
 	{
 		g_iBombPlanter = -1
 	}
@@ -745,7 +748,7 @@ public task_check_scenario()
 				}
 
 				g_iPlayerMVP[g_iBombPlanter] += 1
-				PlayTrack(g_iBombPlanter, TERO_MVP)
+				PlayTrack(g_iBombPlanter)
 
 				#if defined TESTING
 				client_print(0, print_chat, "Scenario: TERO_MVP %d", g_iScenario)
@@ -776,7 +779,7 @@ public task_check_scenario()
 
 				g_iPlayerMVP[g_iBombDefuser] += 1
 
-				PlayTrack(g_iBombDefuser, CT_MVP)
+				PlayTrack(g_iBombDefuser)
 
 				#if defined TESTING
 				client_print(0, print_chat, "Scenario: CT_MVP %d", g_iScenario )
@@ -893,7 +896,7 @@ stock CalculateTopKiller(WinScenario:status)
 
 			g_iPlayerMVP[g_iTopKiller] += 1
 
-			PlayTrack(g_iTopKiller, KILLER_MVP)
+			PlayTrack(g_iTopKiller)
 		}
 		case false:
 		{
@@ -920,57 +923,30 @@ stock CalculateTopKiller(WinScenario:status)
 	return PLUGIN_HANDLED
 }
 
-stock PlayTrack(iIndex, WinScenario:iType)
+stock PlayTrack(iIndex)
 {
-	static iPlayers[MAX_PLAYERS], iPlayer, iNum, szTrack[64]
+	static iPlayers[MAX_PLAYERS], iPlayer, iNum
 	get_players(iPlayers, iNum)
 
-	new eTrack[Tracks]
+	new eTrack[Tracks], iRandom
 
-	for(new id; id < iNum; id++)
+	if(g_iUserSelectedTrack[iIndex] < 0)
 	{
-		iPlayer = iPlayers[id]
+		iRandom = random_num(0, g_iTracksNum - 1)
+		ArrayGetArray(g_aTracks, iRandom, eTrack)
+	}
+	else
+	{
+		ArrayGetArray(g_aTracks, g_iUserSelectedTrack[iIndex], eTrack)
+	}
+
+	for(new i; i < iNum; i++)
+	{
+		iPlayer = iPlayers[i]
 
 		if(!g_bDisableTracks[iPlayer])
 		{
-			for(new i; i < g_iTracksNum; i++)
-			{
-				ArrayGetArray(g_aTracks, i, eTrack)
-				switch(iType)
-				{
-					case TERO_MVP:
-					{
-						if(i == g_iUserSelectedTrack[iIndex])
-						{
-							copy(szTrack, charsmax(szTrack), eTrack[szPATH])
-						}
-					}
-					case CT_MVP:
-					{
-						if(i == g_iUserSelectedTrack[iIndex])
-						{
-							copy(szTrack, charsmax(szTrack), eTrack[szPATH])
-						}
-					}
-					case KILLER_MVP:
-					{
-						if(i == g_iUserSelectedTrack[iIndex])
-						{
-							copy(szTrack, charsmax(szTrack), eTrack[szPATH])
-						}
-					}
-				}
-			}
-
-			if(g_iUserSelectedTrack[iIndex] == -1)
-			{
-				new iRandom = random(g_iTracksNum - 1)
-				ArrayGetArray(g_aTracks, iRandom, eTrack)
-
-				copy(szTrack, charsmax(szTrack), eTrack[szPATH])
-			}
-
-			PlaySound(iPlayer, szTrack)
+			PlaySound(iPlayer, eTrack[szPATH])
 		}
 	}
 }
@@ -998,6 +974,8 @@ public clcmd_say_test(id)
 	console_print(id, "Message type: %i", g_iMessageType)
 	console_print(id, "Instant Save: %i", g_iSaveInstant)
 	console_print(id, "Selected Track: %i", g_iUserSelectedTrack[id])
+	console_print(id, "Pushed Track Array: %i", ArraySize(g_aTracks))
+	console_print(id, "Total Tracks: %i", g_iTracksNum)
 }
 #endif
 
@@ -1081,22 +1059,17 @@ public SavePlayerData(id)
 		{
 			new szQuery[256]
 			formatex(szQuery, charsmax(szQuery), "UPDATE `%s` SET `Player MVP`='%i', `Track`='%i', `Disabled`='%i' WHERE `AuthID`=^"%s^";", g_eDBConfig[MYSQL_TABLE], g_iPlayerMVP[id], g_iUserSelectedTrack[id], g_bDisableTracks[id] ? 1 : 0, g_bAuthData ? g_szAuthID[id] : g_szName[id])
-			SQL_ThreadQuery(g_hSqlTuple, "QueryHandler", szQuery)
-		}
-	}
-}
+			
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
 
-public QueryHandler(iFailState, Handle:iQuery, szError[], iErrorCode)
-{
-	switch(iFailState)
-	{
-		case TQUERY_CONNECT_FAILED: 
-		{
-			log_amx("[SQL Error] Connection failed (%i): %s", iErrorCode, szError)
-		}
-		case TQUERY_QUERY_FAILED:
-		{
-			log_amx("[SQL Error] Query failed (%i): %s", iErrorCode, szError)
+   			if(!SQL_Execute(iQuery))
+			{
+				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+				log_to_file(LOG_FILE, g_szSqlError)
+			}
+
+			SQL_Execute(iQuery)
+			SQL_FreeHandle(iQuery)
 		}
 	}
 }
@@ -1124,8 +1097,7 @@ public mvp_menu_handle(id, menu, item)
 {
 	if(item == MENU_EXIT || !is_user_connected(id))
 	{
-		menu_destroy(menu)
-		return PLUGIN_HANDLED
+		return MenuExit(menu)
 	}
 
 	switch(item)
