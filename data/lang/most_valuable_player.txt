@@ -15,6 +15,8 @@ MVP_PLANTER_SHOW_HUD = Player of the round: %s for planting the bomb.
 NO_MVP_SHOW_CHAT = Player of the round: ^3No Player^1 was ^4good enough this round.
 NO_MVP_SHOW_HUD = Player of the round: No Player was good enough this round.
 MVP_NO_TRACKS_LOADED = No tracks loaded.
+MVP_VIP_ONLY = \r[VIP Only]
+MVP_TRACK_VIP_ONLY = This track is only for ^4V.I.P^1 members.
 
 [ro]
 MVP_MENU_TITLE = Meniu MVP
@@ -33,6 +35,8 @@ MVP_PLANTER_SHOW_HUD = Jucatorul acestei runde: %s pentru plantarea bombei.
 NO_MVP_SHOW_CHAT = Jucatorul acestei runde: ^3Niciun Jucator^1 nu a fost destul de ^4bun aceasta runda.
 NO_MVP_SHOW_HUD = Jucatorul acestei runde: Niciun Jucator nu a fost destul de bun aceasta runda.
 MVP_NO_TRACKS_LOADED =Nicio melodie incarcata.
+MVP_VIP_ONLY = \r[Doar VIP]
+MVP_TRACK_VIP_ONLY = Aceasta melodie este doar pentru membri ^4V.I.P^1.
 
 // Thanks to [teol](https://forums.alliedmods.net/member.php?u=62500)
 [fr]
