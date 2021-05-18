@@ -113,6 +113,8 @@ MVP_PLANTER_SHOW_HUD = Raundun oyuncusu: %s (bombayi yerlestirme)
 NO_MVP_SHOW_CHAT = Raundun oyuncusu: Bu raund ^4yeteri kadar iyi oyuncu ^1yoktu
 NO_MVP_SHOW_HUD = Raundun oyuncusu: Bu raund yeteri kadar iyi oyuncu yoktu
 MVP_NO_TRACKS_LOADED = Hic yuklu parca yok
+MVP_VIP_ONLY = \r[Sadece VIP]
+MVP_TRACK_VIP_ONLY = Bu parca sadece ^4V.I.P ^1uyeler icindir
 
 // Thanks to[Godofwar](https://forums.alliedmods.net/member.php?u=266045)
 [de]
