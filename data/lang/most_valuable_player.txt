@@ -136,3 +136,26 @@ MVP_PLANTER_SHOW_HUD = Spieler der Runde ist: %s fürs legen der Bombe.
 NO_MVP_SHOW_CHAT = Spieler der Runde: ^3Kein Spieler^1 war ^4gut genug in dieser Runde.
 NO_MVP_SHOW_HUD = Spieler der Runde: Kein Spieler war in dieser Runde gut genug.
 MVP_NO_TRACKS_LOADED = Keine Titel geladen.
+
+// Random guy from AlliedModders (https://forums.alliedmods.net/member.php?u=308640)
+[ru]
+MVP_MENU_TITLE = Меню MVP
+MVP_CHOOSE_TRACK = Выберите трек
+MVP_TRACK_LIST = Показать список треков
+MVP_SOUNDS_ON_OFF = Треки MVP: \y%s
+MVP_TRACK_X_SELECTED = Вы выбрали трек: ^4%s
+MVP_TRACK_X_DESELECTED = Вы отменили выбор трека: ^4%s
+MVP_TRACK_LIST_TITLE = Список треков
+MVP_KILLER_SHOW_CHAT = Самый ценный игрок: ^3%s ^1за ^4убийство %i игроков.
+MVP_KILLER_SHOW_HUD = Самый ценный игрок: %s за убийство %i игроков.
+MVP_DEFUSER_SHOW_CHAT = Самый ценный игрок: ^3%s ^1за ^4обезвреживание бомбы.
+MVP_DEFUSER_SHOW_HUD = Самый ценный игрок: %s за обезвреживание бомбы.
+MVP_PLANTER_SHOW_CHAT = Самый ценный игрок: ^3%s ^1за ^4закладку бомбы.
+MVP_PLANTER_SHOW_HUD = Самый ценный игрок: %s за закладку бомбы.
+NO_MVP_SHOW_CHAT = В этом раунде ^3не было ^4достаточно ценного игрока.
+NO_MVP_SHOW_HUD = В этом раунде не было достаточно ценного игрока.
+MVP_NO_TRACKS_LOADED = Нет загруженных треков.
+
+MVP_VIP_ONLY = \r[Только для VIP]
+MVP_TRACK_VIP_ONLY = Этот трек доступен только ^4VIP ^1игрокам.
+MVP_PLAYING_TRACK = Сейчас проигрывается: 
