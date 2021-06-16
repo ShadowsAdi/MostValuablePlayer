@@ -159,3 +159,26 @@ MVP_NO_TRACKS_LOADED = Нет загруженных треков.
 MVP_VIP_ONLY = \r[Только для VIP]
 MVP_TRACK_VIP_ONLY = Этот трек доступен только ^4VIP ^1игрокам.
 MVP_PLAYING_TRACK = Сейчас проигрывается: 
+
+// Thanks [YankoNL] (https://forums.alliedmods.net/member.php?u=289644)
+[bg]
+MVP_MENU_TITLE = MVP Menu
+MVP_CHOOSE_TRACK = Izberi melodiya
+MVP_TRACK_LIST = Vij spisuk s melodii
+MVP_SOUNDS_ON_OFF = MVP Zvuci: \y%s
+MVP_TRACK_X_SELECTED = Vie izbrahte: ^4%s
+MVP_TRACK_X_DESELECTED = Vie otkazahte izbora: ^4%s
+MVP_TRACK_LIST_TITLE = Spisuk s Melodii
+MVP_KILLER_SHOW_CHAT = Igrach na runda: ^3%s^1 ubi ^4 %i igracha.
+MVP_KILLER_SHOW_HUD = Igrach na runda: %s ubi %i igracha.
+MVP_DEFUSER_SHOW_CHAT = Igrach na runda: ^3%s^1 za ^4obezvrejdane na bombata.
+MVP_DEFUSER_SHOW_HUD = Igrach na runda: %s obezvredi bombata.
+MVP_PLANTER_SHOW_CHAT = Igrach na runda: ^3%s^1 za ^4zalagane na bombata.
+MVP_PLANTER_SHOW_HUD = Igrach na runda: %s zaloji bombata.
+NO_MVP_SHOW_CHAT = Igrach na runda: ^3Nikoi^1 ne beshe ^4dostatuchno dobur za tozi rund.
+NO_MVP_SHOW_HUD = Igrach na runda: Nikoi ne beshe dostatuchno dobur za tozi rund
+MVP_NO_TRACKS_LOADED = Nyama nalichni melodii.
+
+MVP_VIP_ONLY = \r[VIP Only]
+MVP_TRACK_VIP_ONLY = Tazi melodiya e samo za ^4V.I.P^1 igrachi.
+MVP_PLAYING_TRACK = Vuzproizvejda se Melodiya:
