@@ -32,7 +32,7 @@ const m_LastHitGroup = 					75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"2.1"
+#define VERSION 						"2.0"
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= MAX_PLAYERS)
@@ -970,7 +970,7 @@ public PlayTrack(iIndex)
 
 	new eTrack[Tracks], iRandom
 
-	if(g_iUserSelectedTrack[iIndex] < 0 || g_iUserSelectedTrack[iIndex] > (ArraySize(g_aTracks) - 1))
+	if(g_iUserSelectedTrack[iIndex] < 0 || g_iUserSelectedTrack[iIndex] > ArraySize(g_aTracks))
 	{
 		_Search:
 		iRandom = random_num(0, g_iTracksNum - 1)
