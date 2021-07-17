@@ -37,7 +37,7 @@ jobs:
           cd addons/amxmodx/scripting/
           
           # Give amxxpc the required permissions
-          chmod +x amxxpc32
+          chmod +x amxxpc
           
           # Compile all plugins inside scripting folder
           # List of files to compile generated from the original checked out files
@@ -45,7 +45,7 @@ jobs:
           do
             amxfile="`echo $file | sed -e 's/\.sma$/\.amxx/'`"
             echo -e "\nCompiling $(basename $file)..."
-            ./amxxpc32 $(basename $file) -o$ARTIFACTS_DIR/$(basename "$amxfile")
+            ./amxxpc $(basename $file) -o$ARTIFACTS_DIR/$(basename "$amxfile")
           done
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
