@@ -30,7 +30,7 @@ jobs:
           tar -zxvf "amxmodx-$AMXX_MOD_PACKAGE-linux.tar.gz"
       - name: Download ReAPI Files
         run: |
-          wget https://github.com/s1lentq/reapi/releases/download/5.19.0.217/reapi-bin-5.19.0.217-dev.zip
+          wget https://github.com/s1lentq/reapi/releases/download/5.19.0.217/reapi-bin-5.19.0.217.zip
           unzip reapi_5.19.0.217-dev.zip
       - name: Prepare files for compilation
         run: cp -r -v $REPO_SCRIPTING_DIR addons/amxmodx/
