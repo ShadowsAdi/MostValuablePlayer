@@ -492,7 +492,7 @@ public client_putinserver(id)
 
 	g_bDisableTracks[id] = false
 
-	if(!is_user_bot(id) || !is_user_hltv(id))
+	if(!is_user_bot(id) && !is_user_hltv(id))
 	{
 		LoadPlayerData(id)
 	}
@@ -515,7 +515,7 @@ public client_disconnected(id)
 		g_eMVPlayer[iPlanter] = -1
 	}
 
-	if(!is_user_bot(id) || !is_user_hltv(id))
+	if(!is_user_bot(id) && !is_user_hltv(id))
 	{
 		SavePlayerData(id)
 	}
