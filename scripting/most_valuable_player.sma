@@ -12,8 +12,10 @@
 #include <cromchat>
 #include <csx>
 #include <most_valuable_player>
-#include <sqlx>
 #include <nvault>
+
+#include <sqlx>
+#pragma defclasslib sqlite sqlite
 
 #if defined USE_REAPI
 #include <reapi>
@@ -32,7 +34,7 @@ const m_LastHitGroup = 					75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"2.1"
+#define VERSION 						"2.2"
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= MAX_PLAYERS)
@@ -40,6 +42,8 @@ const m_LastHitGroup = 					75
 #define NATIVE_ERROR					-1
 
 #define MAX_TRACK_LENGHT				64
+
+#define MAX_CONNECT_TRY					2
 
 new const CHAT_PREFIX[]			=		"CHAT_PREFIX"
 new const HUD_PREFIX[]			=		"HUD_PREFIX"
@@ -229,7 +233,7 @@ public plugin_end()
 
 public plugin_precache()
 {
-	static szConfigsDir[64], szFileName[64]
+	new szConfigsDir[64], szFileName[64]
 	get_configsdir(szConfigsDir, charsmax(szConfigsDir))
 	formatex(szFileName, charsmax(szFileName), "%s/MVPTracks.ini", szConfigsDir)
 
@@ -446,9 +450,15 @@ public DetectSaveType()
 		}
 		case SQL, SQL_LITE:
 		{
-			if(g_iSaveType == SQL_LITE)
+			static iTry
+			if(g_iSaveType == SQL_LITE || iTry == MAX_CONNECT_TRY)
 			{
 				SQL_SetAffinity("sqlite")
+
+				if(iTry)
+				{
+					log_to_file(LOG_FILE, "MVP: Failed to connect to MySql Database, switched to SqLite!")
+				}
 			}
 
 			g_hSqlTuple = SQL_MakeDbTuple(g_eDBConfig[MYSQL_HOST], g_eDBConfig[MYSQL_USER], g_eDBConfig[MYSQL_PASS], g_eDBConfig[MYSQL_DB])
@@ -458,8 +468,13 @@ public DetectSaveType()
 
 			if(g_iSqlConnection == Empty_Handle)
 			{
-				log_to_file(LOG_FILE, "MVP: Failed to connect to database. Make sure databse settings are right!")
-				SQL_FreeHandle(g_iSqlConnection)
+				log_to_file(LOG_FILE, "MVP: Failed to connect to database. %s", iTry ? "Connecting to SqLite..." : "Retrying!")
+				iTry += 1
+				if(iTry)
+				{
+					DetectSaveType()
+				}
+				return
 			}
 
 			new Handle:iQueries = SQL_PrepareQuery(g_iSqlConnection, "CREATE TABLE IF NOT EXISTS `%s`\
@@ -474,6 +489,8 @@ public DetectSaveType()
 				SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
 				log_amx(g_szSqlError)
 			}
+
+			SQL_FreeHandle(iQueries)
 		}
 	}
 }
@@ -530,14 +547,14 @@ public client_disconnected(id)
 #if defined USE_REAPI
 public RG_RestartRound_Post()
 {
-	static players[32], inum, player
-	get_players(players, inum, "ch")
+	static iPlayers[32], iNum, iPlayer
+	get_players(iPlayers, iNum, "ch")
 
-	for(new i; i < inum; i++)
+	for(new i; i < iNum; i++)
 	{
-		player = players[i]
+		iPlayer = iPlayers[i]
 
-		arrayset(g_iDamage[player], 0, sizeof(g_iDamage[]))
+		arrayset(g_iDamage[iPlayer], 0, sizeof(g_iDamage[]))
 	}
 	arrayset(g_iKills, 0, charsmax(g_iKills))
 	g_eMVPlayer[iTopKiller] = 0
@@ -553,7 +570,7 @@ public RG_Player_Damage_Post(iVictim, iInflictor, iAttacker, Float:fDamage)
 	if(!IsPlayer(iVictim) || !IsPlayer(iAttacker) || iVictim == iAttacker)
 		return HC_CONTINUE
 
-	new iHitzone = get_member( iAttacker , m_LastHitGroup )
+	new iHitzone = get_member(iAttacker , m_LastHitGroup)
 
 	g_iDamage[iAttacker][iDamage] += floatround(fDamage)
 	if(iHitzone == HIT_HEAD)
@@ -566,9 +583,7 @@ public RG_Player_Damage_Post(iVictim, iInflictor, iAttacker, Float:fDamage)
 
 public RG_Player_Killed_Post(pVictim, pAttacker, iGibs)
 {
-	if(!IsPlayer(pVictim) || 
-		!IsPlayer(pAttacker) || 
-		pVictim == pAttacker)
+	if(!IsPlayer(pVictim) || !IsPlayer(pAttacker) || pVictim == pAttacker)
 		return HC_CONTINUE
 
 	g_iKills[pAttacker]++
@@ -878,17 +893,17 @@ public ShowMVP(WinScenario:iScenario)
 			{
 				case MVP_CHAT_MSG:
 				{
-					CC_SendMessage(0, "^1%L", LANG_PLAYER, "NO_MVP_SHOW_CHAT")
+					CC_SendMessage(0, "^1%L", LANG_SERVER, "NO_MVP_SHOW_CHAT")
 				}
 				case MVP_DHUD_MSG:
 				{
 					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_dhudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "NO_MVP_SHOW_HUD")
+					show_dhudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_SERVER, "NO_MVP_SHOW_HUD")
 				}
 				case MVP_HUD_MSG:
 				{
 					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_hudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "NO_MVP_SHOW_HUD")
+					show_hudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_SERVER, "NO_MVP_SHOW_HUD")
 				}
 			}
 		}
@@ -898,18 +913,18 @@ public ShowMVP(WinScenario:iScenario)
 			{
 				case MVP_CHAT_MSG:
 				{
-					CC_SendMessage(0, "^1%L", LANG_PLAYER, "MVP_PLANTER_SHOW_CHAT", g_szName[g_eMVPlayer[iPlanter]])
-					CC_SendMessage(0, "%L ^4%s", LANG_PLAYER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+					CC_SendMessage(0, "^1%L", LANG_SERVER, "MVP_PLANTER_SHOW_CHAT", g_szName[g_eMVPlayer[iPlanter]])
+					CC_SendMessage(0, "%L ^4%s", LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 				case MVP_DHUD_MSG:
 				{
 					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_PLANTER_SHOW_HUD", g_szName[g_eMVPlayer[iPlanter]], LANG_PLAYER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_PLANTER_SHOW_HUD", g_szName[g_eMVPlayer[iPlanter]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 				case MVP_HUD_MSG:
 				{
 					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_PLANTER_SHOW_HUD", g_szName[g_eMVPlayer[iPlanter]], LANG_PLAYER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_PLANTER_SHOW_HUD", g_szName[g_eMVPlayer[iPlanter]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 			}
 		}
@@ -919,18 +934,18 @@ public ShowMVP(WinScenario:iScenario)
 			{
 				case MVP_CHAT_MSG:
 				{
-					CC_SendMessage(0, "^1%L", LANG_PLAYER, "MVP_DEFUSER_SHOW_CHAT", g_szName[g_eMVPlayer[iDefuser]])
-					CC_SendMessage(0, "%L ^4%s", LANG_PLAYER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+					CC_SendMessage(0, "^1%L", LANG_SERVER, "MVP_DEFUSER_SHOW_CHAT", g_szName[g_eMVPlayer[iDefuser]])
+					CC_SendMessage(0, "%L ^4%s", LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 				case MVP_DHUD_MSG:
 				{
 					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_eMVPlayer[iDefuser]], LANG_PLAYER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_eMVPlayer[iDefuser]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 				case MVP_HUD_MSG:
 				{
 					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_eMVPlayer[iDefuser]], LANG_PLAYER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_eMVPlayer[iDefuser]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 			}
 		}
@@ -940,18 +955,18 @@ public ShowMVP(WinScenario:iScenario)
 			{
 				case MVP_CHAT_MSG:
 				{
-					CC_SendMessage(0, "^1%L", LANG_PLAYER, "MVP_KILLER_SHOW_CHAT", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]])
-					CC_SendMessage(0, "%L ^4%s", LANG_PLAYER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+					CC_SendMessage(0, "^1%L", LANG_SERVER, "MVP_KILLER_SHOW_CHAT", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]])
+					CC_SendMessage(0, "%L ^4%s", LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 				case MVP_DHUD_MSG:
 				{
 					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_KILLER_SHOW_HUD", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]], LANG_PLAYER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED") , g_szPlayingTrack)
+					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_KILLER_SHOW_HUD", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED") , g_szPlayingTrack)
 				}
 				case MVP_HUD_MSG:
 				{
 					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_PLAYER, "MVP_KILLER_SHOW_HUD", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]], LANG_PLAYER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_KILLER_SHOW_HUD", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 			}
 		}
@@ -1049,12 +1064,12 @@ public LoadPlayerData(id)
 			{
 				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
 				log_to_file(LOG_FILE, g_szSqlError)
-				SQL_FreeHandle(iQuery)
+				goto _free_handle
 			}
 
-			new szQuery[256]
-			new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? false : true
-   			if(bFoundData)
+			static szQuery[256]
+			new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? true : false
+   			if(!bFoundData)
    			{
    				formatex(szQuery, charsmax(szQuery), "INSERT INTO `%s` (`AuthID`, `Player MVP`, `Track`, `Disabled`) VALUES (^"%s^", '0', '0', '0');", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
    			}
@@ -1069,9 +1084,10 @@ public LoadPlayerData(id)
 			{
 				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
 				log_to_file(LOG_FILE, g_szSqlError)
+				goto _free_handle
 			}
 
-			if(!bFoundData)
+			if(bFoundData)
 			{
 				if(SQL_NumResults(iQuery) > 0)
 				{
@@ -1081,6 +1097,7 @@ public LoadPlayerData(id)
 				}
 			}
 
+			 _free_handle:
 			SQL_FreeHandle(iQuery)
 		}
 	}
@@ -1113,7 +1130,6 @@ public SavePlayerData(id)
 				log_to_file(LOG_FILE, g_szSqlError)
 			}
 
-			SQL_Execute(iQuery)
 			SQL_FreeHandle(iQuery)
 		}
 	}
