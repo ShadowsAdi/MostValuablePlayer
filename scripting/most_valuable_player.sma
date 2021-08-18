@@ -1,6 +1,6 @@
 /* Uncomment this line if you want to use only ReAPI Support*/
-// Activated by Default
-#define USE_REAPI
+// Deactivated by Default
+//#define USE_REAPI
 
 /*Comment the below line if you are not testing the plugin. When testing, debug information will be printed to all players */
 //#define TESTING
