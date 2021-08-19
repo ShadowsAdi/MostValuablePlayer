@@ -14,6 +14,10 @@
 #include <most_valuable_player>
 #include <nvault>
 
+#if AMXX_VERSION_NUM < 183
+#include <dhudmessage>
+#endif
+
 #include <sqlx>
 #pragma defclasslib sqlite sqlite
 
@@ -34,10 +38,10 @@ const m_LastHitGroup = 					75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"2.2"
+#define VERSION 						"2.3"
 #define AUTHOR  						"Shadows Adi"
 
-#define IsPlayer(%1)					(1 <= %1 <= MAX_PLAYERS)
+#define IsPlayer(%1)					(1 <= %1 <= g_iMaxPlayers)
 
 #define NATIVE_ERROR					-1
 
@@ -171,6 +175,7 @@ new g_szSqlError[512]
 new g_hVault
 
 new g_IsConnected
+new g_iMaxPlayers
 
 public plugin_init()
 {
@@ -201,6 +206,8 @@ public plugin_init()
 	#endif
 
 	g_fwScenario = CreateMultiForward("mvp_scenario", ET_IGNORE, FP_CELL)
+
+	g_iMaxPlayers = get_maxplayers()
 }
 
 public plugin_natives()
@@ -220,20 +227,23 @@ public plugin_end()
 {
 	ArrayDestroy(g_aTracks)
 
-	if(g_iSaveType)
+	switch(g_iSaveType)
 	{
-		SQL_FreeHandle(g_hSqlTuple)
-		SQL_FreeHandle(g_iSqlConnection)
-	}
-	else
-	{
-		nvault_close(g_hVault)
+		case NVAULT:
+		{
+			nvault_close(g_hVault)
+		}
+		case SQL, SQL_LITE:
+		{
+			SQL_FreeHandle(g_hSqlTuple)
+			SQL_FreeHandle(g_iSqlConnection)
+		}
 	}
 }
 
 public plugin_precache()
 {
-	new szConfigsDir[64], szFileName[64]
+	new szConfigsDir[256], szFileName[256]
 	get_configsdir(szConfigsDir, charsmax(szConfigsDir))
 	formatex(szFileName, charsmax(szFileName), "%s/MVPTracks.ini", szConfigsDir)
 
@@ -247,9 +257,8 @@ public plugin_precache()
 	{
 		new szData[128], iSection, szString[64], szValue[64], eTrack[Tracks], szTemp[3]
 
-		while(!feof(iFile))
+		while(fgets(iFile, szData, charsmax(szData)))
 		{
-			fgets(iFile, szData, charsmax(szData))
 			trim(szData)
 
 			if(szData[0] == '#' || szData[0] == EOS || szData[0] == ';')
@@ -282,6 +291,8 @@ public plugin_precache()
 
 							g_iTracksNum += 1
 
+							ArrayPushArray(g_aTracks, eTrack)
+
 							#if defined TESTING
 							server_print("Tracks Num: %d", g_iTracksNum)
 							#endif
@@ -292,17 +303,15 @@ public plugin_precache()
 							formatex(szErrorMsg, charsmax(szErrorMsg), "Error. Can't precache sound %s, file doesn't exist!", eTrack[szPATH])
 							log_to_file(LOG_FILE, szErrorMsg)
 						}
-
-						ArrayPushArray(g_aTracks, eTrack)
 					}
 				}
 				case SETTINGS_SECTION:
 				{
 					if(szData[0] != '[')
 					{
-						strtok2(szData, szString, charsmax(szString), szValue, charsmax(szValue), '=', TRIM_INNER)
+						strtok(szData, szString, charsmax(szString), szValue, charsmax(szValue), '=')
 
-						if(szValue[0] == EOS || !szValue[0])
+						if(szValue[0] == EOS)
 							continue
 
 						if(equal(szString, CHAT_PREFIX))
@@ -319,7 +328,7 @@ public plugin_precache()
 						}
 						else if(equal(szString, SAVE_TYPE))
 						{
-							if(0 <= str_to_num(szValue) <= 2)
+							if(NVAULT <= str_to_num(szValue) <= SQL_LITE)
 							{
 								g_iSaveType = str_to_num(szValue)
 							}
@@ -334,12 +343,20 @@ public plugin_precache()
 							{
 								copy(g_eDBConfig[MYSQL_HOST], charsmax(g_eDBConfig[MYSQL_HOST]), szValue)
 							}
+							else
+							{
+								log_reading_error(SQL_HOSTNAME)
+							}
 						}
 						else if(equal(szString, SQL_USERNAME))
 						{
 							if(szValue[0] != EOS)
 							{
 								copy(g_eDBConfig[MYSQL_USER], charsmax(g_eDBConfig[MYSQL_USER]), szValue)
+							}
+							else
+							{
+								log_reading_error(SQL_USERNAME)
 							}
 						}
 						else if(equal(szString, SQL_PASSWORD))
@@ -348,12 +365,20 @@ public plugin_precache()
 							{
 								copy(g_eDBConfig[MYSQL_PASS], charsmax(g_eDBConfig[MYSQL_PASS]), szValue)
 							}
+							else
+							{
+								log_reading_error(SQL_PASSWORD)
+							}
 						}
 						else if(equal(szString, SQL_DATABASE))
 						{
 							if(szValue[0] != EOS)
 							{
 								copy(g_eDBConfig[MYSQL_DB], charsmax(g_eDBConfig[MYSQL_DB]), szValue)
+							}
+							else
+							{
+								log_reading_error(SQL_DATABASE)
 							}
 						}
 						else if(equal(szString, SQL_DBTABLE))
@@ -362,6 +387,10 @@ public plugin_precache()
 							{
 								copy(g_eDBConfig[MYSQL_TABLE], charsmax(g_eDBConfig[MYSQL_TABLE]), szValue)
 							}
+							else
+							{
+								log_reading_error(SQL_DBTABLE)
+							}
 						}
 						else if(equal(szString, NVAULT_DATABASE))
 						{
@@ -369,17 +398,25 @@ public plugin_precache()
 							{
 								copy(g_eDBConfig[NVAULT_DB], charsmax(g_eDBConfig[NVAULT_DB]), szValue)
 							}
+							else
+							{
+								log_reading_error(NVAULT_DATABASE)
+							}
 						}
 						else if(equal(szString, AUTH_METHOD))
 						{
 							if(szValue[0] != EOS)
 							{
-								str_to_num(szValue) == 1 ? g_bAuthData == true : g_bAuthData == false
+								g_bAuthData = bool:clamp(str_to_num(szValue), 0, 1)
+							}
+							else
+							{
+								log_reading_error(AUTH_METHOD)
 							}
 						}
 						else if(equal(szString, INSTANT_SAVE))
 						{
-							g_iSaveInstant = str_to_num(szValue)
+							g_iSaveInstant = clamp(str_to_num(szValue), 0, 1)
 						}
 						else if(equal(szString, MESSAGE_TYPE))
 						{
@@ -409,7 +446,7 @@ public plugin_precache()
 						}
 						else if(equal(szString, MENU_COMMANDS))
 						{
-							while(szValue[0] != EOS && strtok2(szValue, szString, charsmax(szString), szValue, charsmax(szValue), ',', TRIM_INNER))
+							while(szValue[0] != EOS && strtok(szValue, szString, charsmax(szString), szValue, charsmax(szValue), ','))
 							{
 								register_clcmd(szString, "Clcmd_MVPMenu")
 							}
@@ -422,8 +459,8 @@ public plugin_precache()
 				}
 			}
 		}
+		fclose(iFile)
 	}
-	fclose(iFile)
 
 	CC_SetPrefix(g_szPrefix[PREFIX_CHAT])
 
@@ -445,7 +482,7 @@ public DetectSaveType()
 
 			if(g_hVault == INVALID_HANDLE)
 			{
-				set_fail_state("MVP: Failed to open the vault: %s", g_hVault);
+				set_fail_state("MVP: Failed to open the vault");
 			}
 		}
 		case SQL, SQL_LITE:
@@ -470,10 +507,7 @@ public DetectSaveType()
 			{
 				log_to_file(LOG_FILE, "MVP: Failed to connect to database. %s", iTry ? "Connecting to SqLite..." : "Retrying!")
 				iTry += 1
-				if(iTry)
-				{
-					DetectSaveType()
-				}
+				DetectSaveType()
 				return
 			}
 
@@ -795,7 +829,10 @@ public task_check_scenario()
 		}
 	}
 
-	ExecuteForward(g_fwScenario, g_iForwardResult, WinScenario:g_iScenario)
+	if(g_fwScenario != INVALID_HANDLE)
+	{
+		ExecuteForward(g_fwScenario, g_iForwardResult, WinScenario:g_iScenario)
+	}
 }
 
 public bomb_explode(id)
@@ -1049,9 +1086,9 @@ public LoadPlayerData(id)
 
 			if(nvault_lookup(g_hVault, g_bAuthData ? g_szAuthID[id] : g_szName[id], szData, charsmax(szData), iTimestamp))
 			{
-				strtok2(szData, szBuffer[0], charsmax(szBuffer[]), szBuffer[1], charsmax(szBuffer[]), '.', TRIM_INNER)
+				strtok(szData, szBuffer[0], charsmax(szBuffer[]), szBuffer[1], charsmax(szBuffer[]), '.')
 				g_iPlayerMVP[id] = str_to_num(szBuffer[0])
-				strtok2(szData, szBuffer[1], charsmax(szBuffer[]), szBuffer[2], charsmax(szBuffer[]), ',', TRIM_INNER)
+				strtok(szData, szBuffer[1], charsmax(szBuffer[]), szBuffer[2], charsmax(szBuffer[]), ',')
 				g_iUserSelectedTrack[id] = str_to_num(szBuffer[1])
 				g_bDisableTracks[id] = str_to_num(szBuffer[2]) == 1 ? true : false
 			}
@@ -1361,6 +1398,11 @@ stock FindCharPos(Char[])
 		return (Char[0] & 31)
 	}
 	return -1;
+}
+
+stock log_reading_error(const szError[])
+{
+	log_to_file(LOG_FILE, "[MVP] You have a missing parameter on line ^"%s^"", szError)
 }
 
 public native_get_user_mvp_kills(iPluginID, iParamNum)
