@@ -38,7 +38,7 @@ const m_LastHitGroup = 					75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"2.3"
+#define VERSION 						"2.4"
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= g_iMaxPlayers)
@@ -177,6 +177,8 @@ new g_hVault
 new g_IsConnected
 new g_iMaxPlayers
 
+new bool:g_bNotOnlyVip
+
 public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR)
@@ -190,6 +192,7 @@ public plugin_init()
 		RegisterHookChain(RG_CBasePlayer_TakeDamage, "RG_Player_Damage_Post", 1)
 		RegisterHookChain(RG_CBasePlayer_Killed, "RG_Player_Killed_Post", 1)
 		RegisterHookChain(RG_RoundEnd, "RG_Round_End")
+		RegisterHookChain(RG_CSGameRules_ClientUserInfoChanged, "RG_ClientUserInfoChanged_Post", 1)
 	#else
 		register_event("TextMsg", "event_Game_Restart", "a", "2&#Game_C", "2&#Game_w")
 		RegisterHam(Ham_TakeDamage, "player", "Ham_Player_Damage_Post", 1)
@@ -197,6 +200,7 @@ public plugin_init()
 		register_logevent("logev_roundend", 2, "1=Round_End")
 		register_event("SendAudio", "event_twin", "a", "2&%!MRAD_terwin")
 		register_event("SendAudio", "event_ctwin", "a", "2=%!MRAD_ctwin")
+		register_forward(FM_ClientUserInfoChanged, "fw_ClientUserInfoChanged_Post", 1)
 	#endif
 
 	register_logevent("logev_roundstart", 2, "1=Round_Start")
@@ -267,194 +271,173 @@ public plugin_precache()
 			if(szData[0] == '[')
 			{
 				iSection += 1
+				continue
 			}
 
 			switch(iSection)
 			{
 				case TRACKS_SECTION:
 				{
-					if(szData[0] != '[')
+					parse(szData, eTrack[szNAME], charsmax(eTrack[szNAME]), eTrack[szPATH], charsmax(eTrack[szPATH]), szTemp, charsmax(szTemp))
+
+					eTrack[iVipOnly] = str_to_num(szTemp)
+
+					if(!eTrack[iVipOnly])
 					{
-						parse(szData, eTrack[szNAME], charsmax(eTrack[szNAME]), eTrack[szPATH], charsmax(eTrack[szPATH]), szTemp, charsmax(szTemp))
-
-						eTrack[iVipOnly] = str_to_num(szTemp)
-
-						#if defined TESTING
-						server_print("Name: %s", eTrack[szNAME])
-						server_print("Path: %s", eTrack[szPATH])
-						server_print("Vip: %d", eTrack[iVipOnly])
-						#endif
-
-						if(file_exists(eTrack[szPATH]))
-						{
-							precache_generic(eTrack[szPATH])
-
-							g_iTracksNum += 1
-
-							ArrayPushArray(g_aTracks, eTrack)
-
-							#if defined TESTING
-							server_print("Tracks Num: %d", g_iTracksNum)
-							#endif
-						}
-						else
-						{
-							new szErrorMsg[128]
-							formatex(szErrorMsg, charsmax(szErrorMsg), "Error. Can't precache sound %s, file doesn't exist!", eTrack[szPATH])
-							log_to_file(LOG_FILE, szErrorMsg)
-						}
+						g_bNotOnlyVip = true
 					}
+
+					#if defined TESTING
+					server_print("Name: %s", eTrack[szNAME])
+					server_print("Path: %s", eTrack[szPATH])
+					server_print("Vip: %d", eTrack[iVipOnly])
+					#endif
+
+					if(!file_exists(eTrack[szPATH]))
+					{
+						new szErrorMsg[128]
+						formatex(szErrorMsg, charsmax(szErrorMsg), "Error. Can't precache sound %s, file doesn't exist!", eTrack[szPATH])
+						log_to_file(LOG_FILE, szErrorMsg)
+						continue
+					}
+					precache_generic(eTrack[szPATH])
+
+					g_iTracksNum += 1
+
+					ArrayPushArray(g_aTracks, eTrack)
+
+					#if defined TESTING
+					server_print("Tracks Num: %d", g_iTracksNum)
+					#endif
 				}
 				case SETTINGS_SECTION:
 				{
-					if(szData[0] != '[')
+					strtok(szData, szString, charsmax(szString), szValue, charsmax(szValue), '=')
+					trim(szString)
+					trim(szValue)
+
+					if(szValue[0] == EOS)
+						continue
+
+					if(equal(szString, CHAT_PREFIX))
 					{
-						strtok(szData, szString, charsmax(szString), szValue, charsmax(szValue), '=')
-
+						copy(g_szPrefix[PREFIX_CHAT], charsmax(g_szPrefix[PREFIX_CHAT]), szValue)
+					}
+					else if(equal(szString, HUD_PREFIX))
+					{
+						copy(g_szPrefix[PREFIX_HUD], charsmax(g_szPrefix[PREFIX_HUD]), szValue)
+					}
+					else if(equal(szString, MENU_PREFIX))
+					{
+						copy(g_szPrefix[PREFIX_MENU], charsmax(g_szPrefix[PREFIX_MENU]), szValue)
+					}
+					else if(equal(szString, SAVE_TYPE))
+					{
+						if(NVAULT <= str_to_num(szValue) <= SQL_LITE)
+						{
+							g_iSaveType = str_to_num(szValue)
+						}
+						else
+						{
+							g_iSaveType = 0
+						}
+					}
+					else if(equal(szString, SQL_HOSTNAME))
+					{
 						if(szValue[0] == EOS)
-							continue
-
-						if(equal(szString, CHAT_PREFIX))
 						{
-							copy(g_szPrefix[PREFIX_CHAT], charsmax(g_szPrefix[PREFIX_CHAT]), szValue)
+							log_reading_error(SQL_HOSTNAME)
 						}
-						else if(equal(szString, HUD_PREFIX))
+						copy(g_eDBConfig[MYSQL_HOST], charsmax(g_eDBConfig[MYSQL_HOST]), szValue)
+					}
+					else if(equal(szString, SQL_USERNAME))
+					{
+						if(szValue[0] == EOS)
 						{
-							copy(g_szPrefix[PREFIX_HUD], charsmax(g_szPrefix[PREFIX_HUD]), szValue)
+							log_reading_error(SQL_USERNAME)
 						}
-						else if(equal(szString, MENU_PREFIX))
+						copy(g_eDBConfig[MYSQL_USER], charsmax(g_eDBConfig[MYSQL_USER]), szValue)
+					}
+					else if(equal(szString, SQL_PASSWORD))
+					{
+						if(szValue[0] == EOS)
 						{
-							copy(g_szPrefix[PREFIX_MENU], charsmax(g_szPrefix[PREFIX_MENU]), szValue)
+							log_reading_error(SQL_PASSWORD)
 						}
-						else if(equal(szString, SAVE_TYPE))
+						copy(g_eDBConfig[MYSQL_PASS], charsmax(g_eDBConfig[MYSQL_PASS]), szValue)
+					}
+					else if(equal(szString, SQL_DATABASE))
+					{
+						if(szValue[0] == EOS)
 						{
-							if(NVAULT <= str_to_num(szValue) <= SQL_LITE)
-							{
-								g_iSaveType = str_to_num(szValue)
-							}
-							else
-							{
-								g_iSaveType = 0
-							}
+							log_reading_error(SQL_DATABASE)
 						}
-						else if(equal(szString, SQL_HOSTNAME))
+						copy(g_eDBConfig[MYSQL_DB], charsmax(g_eDBConfig[MYSQL_DB]), szValue)
+					}
+					else if(equal(szString, SQL_DBTABLE))
+					{
+						if(szValue[0] == EOS)
 						{
-							if(szValue[0] != EOS)
-							{
-								copy(g_eDBConfig[MYSQL_HOST], charsmax(g_eDBConfig[MYSQL_HOST]), szValue)
-							}
-							else
-							{
-								log_reading_error(SQL_HOSTNAME)
-							}
+							log_reading_error(SQL_DBTABLE)
 						}
-						else if(equal(szString, SQL_USERNAME))
+						copy(g_eDBConfig[MYSQL_TABLE], charsmax(g_eDBConfig[MYSQL_TABLE]), szValue)
+					}
+					else if(equal(szString, NVAULT_DATABASE))
+					{
+						if(szValue[0] == EOS)
 						{
-							if(szValue[0] != EOS)
-							{
-								copy(g_eDBConfig[MYSQL_USER], charsmax(g_eDBConfig[MYSQL_USER]), szValue)
-							}
-							else
-							{
-								log_reading_error(SQL_USERNAME)
-							}
+							log_reading_error(NVAULT_DATABASE)
 						}
-						else if(equal(szString, SQL_PASSWORD))
+						copy(g_eDBConfig[NVAULT_DB], charsmax(g_eDBConfig[NVAULT_DB]), szValue)
+					}
+					else if(equal(szString, AUTH_METHOD))
+					{
+						if(szValue[0] == EOS)
 						{
-							if(szValue[0] != EOS)
-							{
-								copy(g_eDBConfig[MYSQL_PASS], charsmax(g_eDBConfig[MYSQL_PASS]), szValue)
-							}
-							else
-							{
-								log_reading_error(SQL_PASSWORD)
-							}
+							log_reading_error(AUTH_METHOD)
 						}
-						else if(equal(szString, SQL_DATABASE))
+						g_bAuthData = bool:clamp(str_to_num(szValue), 0, 1)
+					}
+					else if(equal(szString, INSTANT_SAVE))
+					{
+						g_iSaveInstant = clamp(str_to_num(szValue), 0, 1)
+					}
+					else if(equal(szString, MESSAGE_TYPE))
+					{
+						if(MVP_CHAT_MSG <= str_to_num(szValue) <= MVP_HUD_MSG)
 						{
-							if(szValue[0] != EOS)
-							{
-								copy(g_eDBConfig[MYSQL_DB], charsmax(g_eDBConfig[MYSQL_DB]), szValue)
-							}
-							else
-							{
-								log_reading_error(SQL_DATABASE)
-							}
+							g_iMessageType = str_to_num(szValue)
 						}
-						else if(equal(szString, SQL_DBTABLE))
+						else
 						{
-							if(szValue[0] != EOS)
-							{
-								copy(g_eDBConfig[MYSQL_TABLE], charsmax(g_eDBConfig[MYSQL_TABLE]), szValue)
-							}
-							else
-							{
-								log_reading_error(SQL_DBTABLE)
-							}
+							g_iMessageType = MVP_DHUD_MSG
 						}
-						else if(equal(szString, NVAULT_DATABASE))
+					}
+					else if(equal(szString, HUD_COLOR))
+					{
+						new szHudColorR[4], szHudColorG[4], szHudColorB[4]
+						parse(szValue, szHudColorR, charsmax(szHudColorR), szHudColorG, charsmax(szHudColorG), szHudColorB, charsmax(szHudColorB))
+						g_iHudColor[HudColorR] = str_to_num(szHudColorR)
+						g_iHudColor[HudColorG] = str_to_num(szHudColorG)
+						g_iHudColor[HudColorB] = str_to_num(szHudColorB)
+					}
+					else if(equal(szString, HUD_POSITION))
+					{
+						new szHudPosX[5], szHudPosY[5]
+						parse(szValue, szHudPosX, charsmax(szHudPosX), szHudPosY, charsmax(szHudPosY))
+						g_fHudPos[HudPosX] = str_to_float(szHudPosX)
+						g_fHudPos[HudPosY] = str_to_float(szHudPosY)
+					}
+					else if(equal(szString, MENU_COMMANDS))
+					{
+						while(szValue[0] != EOS && strtok(szValue, szString, charsmax(szString), szValue, charsmax(szValue), ','))
 						{
-							if(szValue[0] != EOS)
-							{
-								copy(g_eDBConfig[NVAULT_DB], charsmax(g_eDBConfig[NVAULT_DB]), szValue)
-							}
-							else
-							{
-								log_reading_error(NVAULT_DATABASE)
-							}
+							register_clcmd(szString, "Clcmd_MVPMenu")
 						}
-						else if(equal(szString, AUTH_METHOD))
-						{
-							if(szValue[0] != EOS)
-							{
-								g_bAuthData = bool:clamp(str_to_num(szValue), 0, 1)
-							}
-							else
-							{
-								log_reading_error(AUTH_METHOD)
-							}
-						}
-						else if(equal(szString, INSTANT_SAVE))
-						{
-							g_iSaveInstant = clamp(str_to_num(szValue), 0, 1)
-						}
-						else if(equal(szString, MESSAGE_TYPE))
-						{
-							if(MVP_CHAT_MSG <= str_to_num(szValue) <= MVP_HUD_MSG)
-							{
-								g_iMessageType = str_to_num(szValue)
-							}
-							else
-							{
-								g_iMessageType = MVP_DHUD_MSG
-							}
-						}
-						else if(equal(szString, HUD_COLOR))
-						{
-							new szHudColorR[4], szHudColorG[4], szHudColorB[4]
-							parse(szValue, szHudColorR, charsmax(szHudColorR), szHudColorG, charsmax(szHudColorG), szHudColorB, charsmax(szHudColorB))
-							g_iHudColor[HudColorR] = str_to_num(szHudColorR)
-							g_iHudColor[HudColorG] = str_to_num(szHudColorG)
-							g_iHudColor[HudColorB] = str_to_num(szHudColorB)
-						}
-						else if(equal(szString, HUD_POSITION))
-						{
-							new szHudPosX[5], szHudPosY[5]
-							parse(szValue, szHudPosX, charsmax(szHudPosX), szHudPosY, charsmax(szHudPosY))
-							g_fHudPos[HudPosX] = str_to_float(szHudPosX)
-							g_fHudPos[HudPosY] = str_to_float(szHudPosY)
-						}
-						else if(equal(szString, MENU_COMMANDS))
-						{
-							while(szValue[0] != EOS && strtok(szValue, szString, charsmax(szString), szValue, charsmax(szValue), ','))
-							{
-								register_clcmd(szString, "Clcmd_MVPMenu")
-							}
-						}
-						else if(equal(szString, VIP_ACCESS))
-						{
-							g_iVipFlag = FindCharPos(szValue)
-						}
+					}
+					else if(equal(szString, VIP_ACCESS))
+					{
+						g_iVipFlag = FindCharPos(szValue)
 					}
 				}
 			}
@@ -470,63 +453,6 @@ public plugin_precache()
 	}
 
 	DetectSaveType()
-}
-
-public DetectSaveType()
-{
-	switch(g_iSaveType)
-	{
-		case NVAULT:
-		{
-			g_hVault = nvault_open(g_eDBConfig[NVAULT_DB])
-
-			if(g_hVault == INVALID_HANDLE)
-			{
-				set_fail_state("MVP: Failed to open the vault");
-			}
-		}
-		case SQL, SQL_LITE:
-		{
-			static iTry
-			if(g_iSaveType == SQL_LITE || iTry == MAX_CONNECT_TRY)
-			{
-				SQL_SetAffinity("sqlite")
-
-				if(iTry)
-				{
-					log_to_file(LOG_FILE, "MVP: Failed to connect to MySql Database, switched to SqLite!")
-				}
-			}
-
-			g_hSqlTuple = SQL_MakeDbTuple(g_eDBConfig[MYSQL_HOST], g_eDBConfig[MYSQL_USER], g_eDBConfig[MYSQL_PASS], g_eDBConfig[MYSQL_DB])
-
-			new iError
-			g_iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
-
-			if(g_iSqlConnection == Empty_Handle)
-			{
-				log_to_file(LOG_FILE, "MVP: Failed to connect to database. %s", iTry ? "Connecting to SqLite..." : "Retrying!")
-				iTry += 1
-				DetectSaveType()
-				return
-			}
-
-			new Handle:iQueries = SQL_PrepareQuery(g_iSqlConnection, "CREATE TABLE IF NOT EXISTS `%s`\
-				(`AuthID` VARCHAR(32) NOT NULL,\
-				`Player MVP` INT NOT NULL,\
-				`Track` INT NOT NULL,\
-				`Disabled` INT NOT NULL,\
-				PRIMARY KEY(AuthID));", g_eDBConfig[MYSQL_TABLE])
-		
-			if(!SQL_Execute(iQueries))
-			{
-				SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
-				log_amx(g_szSqlError)
-			}
-
-			SQL_FreeHandle(iQueries)
-		}
-	}
 }
 
 public client_authorized(id)
@@ -551,7 +477,7 @@ public client_putinserver(id)
 
 public client_disconnected(id)
 {
-	if(g_iScenario == KILLER_MVP_TERO && g_eMVPlayer[iTopKiller] == id || g_iScenario == KILLER_MVP_CT && g_eMVPlayer[iTopKiller] == id)
+	if(g_eMVPlayer[iTopKiller] == id && (g_iScenario == KILLER_MVP_TERO || g_iScenario == KILLER_MVP_CT))
 	{
 		g_eMVPlayer[iTopKiller] = -1
 	}
@@ -573,7 +499,7 @@ public client_disconnected(id)
 
 	g_iKills[id] = 0
 
-	arrayset(g_iDamage[id], 0, charsmax(g_iDamage))
+	arrayset(g_iDamage[id], 0, sizeof(g_iDamage[]))
 
 	g_IsConnected &= ~( 1 << ( id & 31 ) )
 }
@@ -581,14 +507,12 @@ public client_disconnected(id)
 #if defined USE_REAPI
 public RG_RestartRound_Post()
 {
-	static iPlayers[32], iNum, iPlayer
+	new iPlayers[32], iNum
 	get_players(iPlayers, iNum, "ch")
 
 	for(new i; i < iNum; i++)
 	{
-		iPlayer = iPlayers[i]
-
-		arrayset(g_iDamage[iPlayer], 0, sizeof(g_iDamage[]))
+		arrayset(g_iDamage[iPlayers[i]], 0, sizeof(g_iDamage[]))
 	}
 	arrayset(g_iKills, 0, charsmax(g_iKills))
 	g_eMVPlayer[iTopKiller] = 0
@@ -660,17 +584,29 @@ public RG_Round_End(WinStatus:status, ScenarioEventEndRound:event, Float:fDelay)
 
 	return HC_CONTINUE
 }
+
+public RG_ClientUserInfoChanged_Post(id, infobuffer[])
+{
+	if(containi(infobuffer, "name") != -1)
+	{
+		get_user_name(id, g_szName[id], charsmax(g_szName[]))
+
+		if(g_iSaveInstant)
+		{
+			SavePlayerData(id)
+		}
+	}
+}
+
 #else
 public event_Game_Restart()
 {
-	static iPlayers[32], iNum, iPlayer
+	new iPlayers[32], iNum
 	get_players(iPlayers, iNum, "ch")
 	
 	for(new i; i < iNum; i++)
 	{
-		iPlayer = iPlayers[i]
-
-		arrayset(g_iDamage[iPlayer], 0, sizeof(g_iDamage[]))
+		arrayset(g_iDamage[iPlayers[i]], 0, sizeof(g_iDamage[]))
 	}
 
 	arrayset(g_iKills, 0, charsmax(g_iKills))
@@ -746,11 +682,27 @@ public event_ctwin()
 	client_print(0, print_chat, "event_ctwin called")
 	#endif
 }
+
+public fw_ClientUserInfoChanged_Post(id)
+{
+	new szNewName[MAX_NAME_LENGTH]
+	pev(id, pev_netname, szNewName, charsmax(szNewName))
+
+	if(!equal(g_szName[id], szNewName))
+	{
+		copy(g_szName[id], charsmax(g_szName[]), szNewName)
+
+		if(g_iSaveInstant)
+		{
+			SavePlayerData(id)
+		}
+	}
+}
 #endif
 
 public logev_roundstart()
 {
-	static iPlayers[32], iNum, iPlayer
+	new iPlayers[32], iNum, iPlayer
 	get_players(iPlayers, iNum, "ch")
 
 	for(new i; i < iNum; i++)
@@ -857,205 +809,6 @@ public bomb_defused(id)
 	#endif
 }
 
-public CalculateTopKiller(WinScenario:status)
-{
-	if(g_bIsBombDefused && g_eMVPlayer[iDefuser] || g_bIsBombPlanted && g_eMVPlayer[iPlanter])
-		return PLUGIN_HANDLED
-
-	static iPlayers[32], iNum, iPlayer
-
-	switch(status)
-	{
-		case KILLER_MVP_TERO:
-		{
-			get_players(iPlayers, iNum, "ch", "T")
-		}
-		case KILLER_MVP_CT:
-		{
-			get_players(iPlayers, iNum, "ch", "CT")
-		}
-	}
-
-	new iFrags, iTemp, iTempID, bool:bIsValid
-	for(new i; i < iNum; i++)
-	{
-		iPlayer = iPlayers[i]
-
-		iFrags = g_iKills[iPlayer]
-
-		if(iFrags > iTemp)
-		{
-			iTemp = iFrags
-			iTempID = iPlayer
-		}
-	}
-
-	if(0 < iTempID)
-	{
-		g_eMVPlayer[iTopKiller] = iTempID
-		bIsValid = true
-	}
-	else
-	{
-		bIsValid = false
-	}
-
-	switch(bIsValid)
-	{
-		case true:
-		{
-			PlayTrack(g_eMVPlayer[iTopKiller])
-
-			ShowMVP(KILLER_MVP)
-
-			g_iPlayerMVP[g_eMVPlayer[iTopKiller]] += 1
-
-		}
-		case false:
-		{
-			ShowMVP(NO_SCENARIO)
-		}
-	}
-
-	return PLUGIN_HANDLED
-}
-
-public ShowMVP(WinScenario:iScenario)
-{
-	switch(iScenario)
-	{
-		case NO_SCENARIO:
-		{
-			switch(g_iMessageType)
-			{
-				case MVP_CHAT_MSG:
-				{
-					CC_SendMessage(0, "^1%L", LANG_SERVER, "NO_MVP_SHOW_CHAT")
-				}
-				case MVP_DHUD_MSG:
-				{
-					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_dhudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_SERVER, "NO_MVP_SHOW_HUD")
-				}
-				case MVP_HUD_MSG:
-				{
-					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_hudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_SERVER, "NO_MVP_SHOW_HUD")
-				}
-			}
-		}
-		case TERO_MVP:
-		{
-			switch(g_iMessageType)
-			{
-				case MVP_CHAT_MSG:
-				{
-					CC_SendMessage(0, "^1%L", LANG_SERVER, "MVP_PLANTER_SHOW_CHAT", g_szName[g_eMVPlayer[iPlanter]])
-					CC_SendMessage(0, "%L ^4%s", LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
-				}
-				case MVP_DHUD_MSG:
-				{
-					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_PLANTER_SHOW_HUD", g_szName[g_eMVPlayer[iPlanter]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
-				}
-				case MVP_HUD_MSG:
-				{
-					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_PLANTER_SHOW_HUD", g_szName[g_eMVPlayer[iPlanter]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
-				}
-			}
-		}
-		case CT_MVP:
-		{
-			switch(g_iMessageType)
-			{
-				case MVP_CHAT_MSG:
-				{
-					CC_SendMessage(0, "^1%L", LANG_SERVER, "MVP_DEFUSER_SHOW_CHAT", g_szName[g_eMVPlayer[iDefuser]])
-					CC_SendMessage(0, "%L ^4%s", LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
-				}
-				case MVP_DHUD_MSG:
-				{
-					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_eMVPlayer[iDefuser]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
-				}
-				case MVP_HUD_MSG:
-				{
-					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_eMVPlayer[iDefuser]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
-				}
-			}
-		}
-		case KILLER_MVP:
-		{
-			switch(g_iMessageType)
-			{
-				case MVP_CHAT_MSG:
-				{
-					CC_SendMessage(0, "^1%L", LANG_SERVER, "MVP_KILLER_SHOW_CHAT", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]])
-					CC_SendMessage(0, "%L ^4%s", LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
-				}
-				case MVP_DHUD_MSG:
-				{
-					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_KILLER_SHOW_HUD", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED") , g_szPlayingTrack)
-				}
-				case MVP_HUD_MSG:
-				{
-					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
-					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_KILLER_SHOW_HUD", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
-				}
-			}
-		}
-	}
-}
-
-public PlayTrack(iIndex)
-{
-	if(!g_bExistTracks)
-	{
-		return
-	}
-
-	static iPlayers[MAX_PLAYERS], iPlayer, iNum
-	get_players(iPlayers, iNum, "ch")
-
-	new eTrack[Tracks], iRandom
-
-	if(g_iUserSelectedTrack[iIndex] < 0 || g_iUserSelectedTrack[iIndex] > ArraySize(g_aTracks))
-	{
-		_Search:
-		iRandom = random_num(0, g_iTracksNum - 1)
-		ArrayGetArray(g_aTracks, iRandom, eTrack)
-		if(eTrack[iVipOnly] && !is_user_vip(iIndex))
-		{
-			goto _Search
-		}
-	}
-	else
-	{
-		ArrayGetArray(g_aTracks, g_iUserSelectedTrack[iIndex], eTrack)
-		if(eTrack[iVipOnly] && !is_user_vip(iIndex))
-		{
-			g_iUserSelectedTrack[iIndex] = -1
-			goto _Search
-		}
-	}
-
-	copy(g_szPlayingTrack, charsmax(g_szPlayingTrack), eTrack[szNAME])
-	ReplaceMColors(g_szPlayingTrack, charsmax(g_szPlayingTrack))
-
-	for(new i; i < iNum; i++)
-	{
-		iPlayer = iPlayers[i]
-
-		if(!g_bDisableTracks[iPlayer])
-		{
-			PlaySound(iPlayer, eTrack[szPATH])
-		}
-	}
-}
-
 #if defined TESTING
 public clcmd_say_test(id)
 {
@@ -1075,102 +828,6 @@ public clcmd_say_test(id)
 	console_print(id, "Total Tracks: %i", g_iTracksNum)
 }
 #endif
-
-public LoadPlayerData(id)
-{
-	switch(g_iSaveType)
-	{
-		case NVAULT:
-		{
-			new szData[12], iTimestamp, szBuffer[3][12]
-
-			if(nvault_lookup(g_hVault, g_bAuthData ? g_szAuthID[id] : g_szName[id], szData, charsmax(szData), iTimestamp))
-			{
-				strtok(szData, szBuffer[0], charsmax(szBuffer[]), szBuffer[1], charsmax(szBuffer[]), '.')
-				g_iPlayerMVP[id] = str_to_num(szBuffer[0])
-				strtok(szData, szBuffer[1], charsmax(szBuffer[]), szBuffer[2], charsmax(szBuffer[]), ',')
-				g_iUserSelectedTrack[id] = str_to_num(szBuffer[1])
-				g_bDisableTracks[id] = str_to_num(szBuffer[2]) == 1 ? true : false
-			}
-		}
-		case SQL, SQL_LITE:
-		{
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `%s` WHERE `AuthID` = ^"%s^";", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
-		
-			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file(LOG_FILE, g_szSqlError)
-				goto _free_handle
-			}
-
-			static szQuery[256]
-			new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? true : false
-   			if(!bFoundData)
-   			{
-   				formatex(szQuery, charsmax(szQuery), "INSERT INTO `%s` (`AuthID`, `Player MVP`, `Track`, `Disabled`) VALUES (^"%s^", '0', '0', '0');", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
-   			}
-   			else
-   			{
-   				formatex(szQuery, charsmax(szQuery), "SELECT `Player MVP`, `Track`, `Disabled` FROM %s WHERE `AuthID` = ^"%s^";", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
-   			}
-
-   			iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
-
-   			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file(LOG_FILE, g_szSqlError)
-				goto _free_handle
-			}
-
-			if(bFoundData)
-			{
-				if(SQL_NumResults(iQuery) > 0)
-				{
-					g_iPlayerMVP[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Player MVP"))
-					g_iUserSelectedTrack[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Track"))
-					g_bDisableTracks[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Disabled")) == 1 ? true : false
-				}
-			}
-
-			 _free_handle:
-			SQL_FreeHandle(iQuery)
-		}
-	}
-
-	return PLUGIN_HANDLED
-}
-
-public SavePlayerData(id)
-{
-	switch(g_iSaveType)
-	{
-		case NVAULT:
-		{
-			new szData[64]
-
-			formatex(szData, charsmax(szData), "%i.%i,%i", g_iPlayerMVP[id], g_iUserSelectedTrack[id], g_bDisableTracks[id] ? 1 : 0)
-
-			nvault_set(g_hVault, g_bAuthData ? g_szAuthID[id] : g_szName[id], szData)
-		}
-		case SQL, SQL_LITE:
-		{
-			new szQuery[256]
-			formatex(szQuery, charsmax(szQuery), "UPDATE `%s` SET `Player MVP`='%i', `Track`='%i', `Disabled`='%i' WHERE `AuthID`=^"%s^";", g_eDBConfig[MYSQL_TABLE], g_iPlayerMVP[id], g_iUserSelectedTrack[id], g_bDisableTracks[id] ? 1 : 0, g_bAuthData ? g_szAuthID[id] : g_szName[id])
-			
-			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
-
-   			if(!SQL_Execute(iQuery))
-			{
-				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
-				log_to_file(LOG_FILE, g_szSqlError)
-			}
-
-			SQL_FreeHandle(iQuery)
-		}
-	}
-}
 
 public Clcmd_MVPMenu(id)
 {
@@ -1350,7 +1007,380 @@ public clcmd_tracklist_handle(id, menu, item)
 	return MenuExit(menu)
 }
 
-stock PlaySound(id, szTrack[])
+DetectSaveType()
+{
+	switch(g_iSaveType)
+	{
+		case NVAULT:
+		{
+			g_hVault = nvault_open(g_eDBConfig[NVAULT_DB])
+
+			if(g_hVault == INVALID_HANDLE)
+			{
+				set_fail_state("MVP: Failed to open the vault");
+			}
+		}
+		case SQL, SQL_LITE:
+		{
+			static iTry
+			if(g_iSaveType == SQL_LITE || iTry == MAX_CONNECT_TRY)
+			{
+				SQL_SetAffinity("sqlite")
+
+				if(iTry)
+				{
+					log_to_file(LOG_FILE, "MVP: Failed to connect to MySql Database, switched to SqLite!")
+				}
+			}
+
+			g_hSqlTuple = SQL_MakeDbTuple(g_eDBConfig[MYSQL_HOST], g_eDBConfig[MYSQL_USER], g_eDBConfig[MYSQL_PASS], g_eDBConfig[MYSQL_DB])
+
+			new iError
+			g_iSqlConnection = SQL_Connect(g_hSqlTuple, iError, g_szSqlError, charsmax(g_szSqlError))
+
+			if(g_iSqlConnection == Empty_Handle)
+			{
+				log_to_file(LOG_FILE, "MVP: Failed to connect to database. %s", iTry ? "Connecting to SqLite..." : "Retrying!")
+				iTry += 1
+				DetectSaveType()
+				return
+			}
+
+			new Handle:iQueries = SQL_PrepareQuery(g_iSqlConnection, "CREATE TABLE IF NOT EXISTS `%s`\
+				(`AuthID` VARCHAR(32) NOT NULL,\
+				`Player MVP` INT NOT NULL,\
+				`Track` INT NOT NULL,\
+				`Disabled` INT NOT NULL,\
+				PRIMARY KEY(AuthID));", g_eDBConfig[MYSQL_TABLE])
+		
+			if(!SQL_Execute(iQueries))
+			{
+				SQL_QueryError(iQueries, g_szSqlError, charsmax(g_szSqlError))
+				log_amx(g_szSqlError)
+			}
+
+			SQL_FreeHandle(iQueries)
+		}
+	}
+}
+
+LoadPlayerData(id)
+{
+	switch(g_iSaveType)
+	{
+		case NVAULT:
+		{
+			new szData[12], iTimestamp, szBuffer[3][12]
+
+			if(nvault_lookup(g_hVault, g_bAuthData ? g_szAuthID[id] : g_szName[id], szData, charsmax(szData), iTimestamp))
+			{
+				strtok(szData, szBuffer[0], charsmax(szBuffer[]), szBuffer[1], charsmax(szBuffer[]), '.')
+				trim(szBuffer[1])
+				g_iPlayerMVP[id] = str_to_num(szBuffer[0])
+				strtok(szData, szBuffer[1], charsmax(szBuffer[]), szBuffer[2], charsmax(szBuffer[]), ',')
+				trim(szBuffer[2])
+				g_iUserSelectedTrack[id] = str_to_num(szBuffer[1])
+				g_bDisableTracks[id] = str_to_num(szBuffer[2]) == 1 ? true : false
+			}
+		}
+		case SQL, SQL_LITE:
+		{
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, "SELECT * FROM `%s` WHERE `AuthID` = ^"%s^";", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
+		
+			if(!SQL_Execute(iQuery))
+			{
+				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+				log_to_file(LOG_FILE, g_szSqlError)
+				goto _free_handle
+			}
+
+			new szQuery[256]
+			new bool:bFoundData = SQL_NumResults( iQuery ) > 0 ? true : false
+   			if(!bFoundData)
+   			{
+   				formatex(szQuery, charsmax(szQuery), "INSERT INTO `%s` (`AuthID`, `Player MVP`, `Track`, `Disabled`) VALUES (^"%s^", '0', '0', '0');", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
+   			}
+   			else
+   			{
+   				formatex(szQuery, charsmax(szQuery), "SELECT `Player MVP`, `Track`, `Disabled` FROM %s WHERE `AuthID` = ^"%s^";", g_eDBConfig[MYSQL_TABLE], g_bAuthData ? g_szAuthID[id] : g_szName[id])
+   			}
+
+   			iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
+
+   			if(!SQL_Execute(iQuery))
+			{
+				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+				log_to_file(LOG_FILE, g_szSqlError)
+				goto _free_handle
+			}
+
+			if(bFoundData)
+			{
+				if(SQL_NumResults(iQuery) > 0)
+				{
+					g_iPlayerMVP[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Player MVP"))
+					g_iUserSelectedTrack[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Track"))
+					g_bDisableTracks[id] = SQL_ReadResult(iQuery, SQL_FieldNameToNum(iQuery, "Disabled")) == 1 ? true : false
+				}
+			}
+
+			 _free_handle:
+			SQL_FreeHandle(iQuery)
+		}
+	}
+
+	return PLUGIN_HANDLED
+}
+
+SavePlayerData(id)
+{
+	switch(g_iSaveType)
+	{
+		case NVAULT:
+		{
+			new szData[64]
+
+			formatex(szData, charsmax(szData), "%i.%i,%i", g_iPlayerMVP[id], g_iUserSelectedTrack[id], g_bDisableTracks[id] ? 1 : 0)
+
+			nvault_set(g_hVault, g_bAuthData ? g_szAuthID[id] : g_szName[id], szData)
+		}
+		case SQL, SQL_LITE:
+		{
+			new szQuery[256]
+			formatex(szQuery, charsmax(szQuery), "UPDATE `%s` SET `Player MVP`='%i', `Track`='%i', `Disabled`='%i' WHERE `AuthID`=^"%s^";", g_eDBConfig[MYSQL_TABLE], g_iPlayerMVP[id], g_iUserSelectedTrack[id], g_bDisableTracks[id] ? 1 : 0, g_bAuthData ? g_szAuthID[id] : g_szName[id])
+			
+			new Handle:iQuery = SQL_PrepareQuery(g_iSqlConnection, szQuery)
+
+   			if(!SQL_Execute(iQuery))
+			{
+				SQL_QueryError(iQuery, g_szSqlError, charsmax(g_szSqlError))
+				log_to_file(LOG_FILE, g_szSqlError)
+			}
+
+			SQL_FreeHandle(iQuery)
+		}
+	}
+}
+
+CalculateTopKiller(WinScenario:status)
+{
+	if((g_bIsBombDefused || g_bIsBombPlanted) && (g_eMVPlayer[iDefuser] || g_eMVPlayer[iPlanter]))
+		return PLUGIN_HANDLED
+
+	new iPlayers[32], iNum, iPlayer
+
+	get_players(iPlayers, iNum, "ch", status == KILLER_MVP_TERO ? "T" : "CT")
+
+	new iFrags, iTemp, iTempID, bool:bIsValid
+	for(new i; i < iNum; i++)
+	{
+		iPlayer = iPlayers[i]
+
+		iFrags = g_iKills[iPlayer]
+
+		if(iFrags > iTemp)
+		{
+			iTemp = iFrags
+			iTempID = iPlayer
+		}
+	}
+
+	if(0 < iTempID)
+	{
+		g_eMVPlayer[iTopKiller] = iTempID
+		bIsValid = true
+	}
+	else
+	{
+		bIsValid = false
+	}
+
+	switch(bIsValid)
+	{
+		case true:
+		{
+			PlayTrack(g_eMVPlayer[iTopKiller])
+
+			ShowMVP(KILLER_MVP)
+
+			g_iPlayerMVP[g_eMVPlayer[iTopKiller]] += 1
+
+		}
+		case false:
+		{
+			ShowMVP(NO_SCENARIO)
+		}
+	}
+
+	return PLUGIN_HANDLED
+}
+
+ShowMVP(WinScenario:iScenario)
+{
+	switch(iScenario)
+	{
+		case NO_SCENARIO:
+		{
+			switch(g_iMessageType)
+			{
+				case MVP_CHAT_MSG:
+				{
+					CC_SendMessage(0, "^1%L", LANG_SERVER, "NO_MVP_SHOW_CHAT")
+				}
+				case MVP_DHUD_MSG:
+				{
+					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					show_dhudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_SERVER, "NO_MVP_SHOW_HUD")
+				}
+				case MVP_HUD_MSG:
+				{
+					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					show_hudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_SERVER, "NO_MVP_SHOW_HUD")
+				}
+			}
+		}
+		case TERO_MVP:
+		{
+			switch(g_iMessageType)
+			{
+				case MVP_CHAT_MSG:
+				{
+					CC_SendMessage(0, "^1%L", LANG_SERVER, "MVP_PLANTER_SHOW_CHAT", g_szName[g_eMVPlayer[iPlanter]])
+					CC_SendMessage(0, "%L ^4%s", LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+				}
+				case MVP_DHUD_MSG:
+				{
+					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_PLANTER_SHOW_HUD", g_szName[g_eMVPlayer[iPlanter]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+				}
+				case MVP_HUD_MSG:
+				{
+					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_PLANTER_SHOW_HUD", g_szName[g_eMVPlayer[iPlanter]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+				}
+			}
+		}
+		case CT_MVP:
+		{
+			switch(g_iMessageType)
+			{
+				case MVP_CHAT_MSG:
+				{
+					CC_SendMessage(0, "^1%L", LANG_SERVER, "MVP_DEFUSER_SHOW_CHAT", g_szName[g_eMVPlayer[iDefuser]])
+					CC_SendMessage(0, "%L ^4%s", LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+				}
+				case MVP_DHUD_MSG:
+				{
+					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_eMVPlayer[iDefuser]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+				}
+				case MVP_HUD_MSG:
+				{
+					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_eMVPlayer[iDefuser]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+				}
+			}
+		}
+		case KILLER_MVP:
+		{
+			switch(g_iMessageType)
+			{
+				case MVP_CHAT_MSG:
+				{
+					CC_SendMessage(0, "^1%L", LANG_SERVER, "MVP_KILLER_SHOW_CHAT", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]])
+					CC_SendMessage(0, "%L ^4%s", LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+				}
+				case MVP_DHUD_MSG:
+				{
+					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_KILLER_SHOW_HUD", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED") , g_szPlayingTrack)
+				}
+				case MVP_HUD_MSG:
+				{
+					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_KILLER_SHOW_HUD", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
+				}
+			}
+		}
+	}
+}
+
+PlayTrack(iIndex)
+{
+	if(!g_bExistTracks)
+	{
+		return
+	}
+
+	new iPlayers[MAX_PLAYERS], iPlayer, iNum
+	get_players(iPlayers, iNum, "ch")
+
+	new eTrack[Tracks], iRandom, Array:aTempArray, bool:bTakeTemp, iTempID
+	if(g_bNotOnlyVip)
+	{
+		aTempArray = ArrayCreate(Tracks)
+		for(new i; i < ArraySize(g_aTracks); i++)
+		{
+			ArrayGetArray(g_aTracks, i, eTrack)
+
+			if(!eTrack[iVipOnly])
+			{
+				ArrayPushCell(aTempArray, i)
+			}
+		}
+	}
+
+	if(g_iUserSelectedTrack[iIndex] != -1 && g_iUserSelectedTrack[iIndex] <= ArraySize(g_aTracks))
+	{
+		ArrayGetArray(g_aTracks, g_iUserSelectedTrack[iIndex], eTrack)
+		if(eTrack[iVipOnly] && !is_user_vip(iIndex))
+		{
+			if(g_bNotOnlyVip)
+			{
+				bTakeTemp = true
+			}
+			g_iUserSelectedTrack[iIndex] = -1
+		}	
+	}
+	else
+	{
+		if(!is_user_vip(iIndex) && g_bNotOnlyVip)
+		{
+			bTakeTemp = true
+		}
+
+		new iSize = ArraySize(bTakeTemp ? aTempArray : g_aTracks)
+
+		iRandom = iSize > 1 ? random_num(0, iSize - 1) : (iSize - 1)
+	}
+
+	if(bTakeTemp)
+	{
+		iTempID = ArrayGetCell(aTempArray, iRandom)
+	}
+
+	if(g_bNotOnlyVip)
+	{
+		ArrayDestroy(aTempArray)
+	}
+
+	ArrayGetArray(g_aTracks, bTakeTemp ? iTempID : iRandom , eTrack)
+
+	copy(g_szPlayingTrack, charsmax(g_szPlayingTrack), eTrack[szNAME])
+	ReplaceMColors(g_szPlayingTrack, charsmax(g_szPlayingTrack))
+
+	for(new i; i < iNum; i++)
+	{
+		iPlayer = iPlayers[i]
+
+		if(!g_bDisableTracks[iPlayer])
+		{
+			PlaySound(iPlayer, eTrack[szPATH])
+		}
+	}
+}
+
+PlaySound(id, szTrack[])
 {
 	if(g_IsConnected & ( 1 << ( id & 31 ) ) )
 	{
@@ -1358,14 +1388,14 @@ stock PlaySound(id, szTrack[])
 	}
 }
 
-stock MenuExit(menu)
+MenuExit(menu)
 {
 	menu_destroy(menu)
 
 	return PLUGIN_HANDLED
 }
 
-stock ReplaceMColors(szString[], iLen)
+ReplaceMColors(szString[], iLen)
 {
 	new szTemp[64]
 	for(new i; i < sizeof(MenuColors); i++)
@@ -1378,7 +1408,7 @@ stock ReplaceMColors(szString[], iLen)
 	return szTemp
 }
 
-stock is_user_vip(id)
+is_user_vip(id)
 {
 	if(g_iVipFlag < 0)
 	{
@@ -1391,7 +1421,7 @@ stock is_user_vip(id)
 	return false
 }
 
-stock FindCharPos(Char[])
+FindCharPos(Char[])
 {
 	if(isalpha(Char[0]))
 	{
@@ -1400,7 +1430,7 @@ stock FindCharPos(Char[])
 	return -1;
 }
 
-stock log_reading_error(const szError[])
+log_reading_error(const szError[])
 {
 	log_to_file(LOG_FILE, "[MVP] You have a missing parameter on line ^"%s^"", szError)
 }
