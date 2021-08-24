@@ -38,7 +38,7 @@ const m_LastHitGroup = 					75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"2.4"
+#define VERSION 						"2.5"
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= g_iMaxPlayers)
@@ -1168,6 +1168,8 @@ SavePlayerData(id)
 			SQL_FreeHandle(iQuery)
 		}
 	}
+
+	return PLUGIN_HANDLED
 }
 
 CalculateTopKiller(WinScenario:status)
