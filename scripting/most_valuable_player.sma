@@ -200,7 +200,7 @@ public plugin_init()
 		register_logevent("Logev_Roundend", 2, "1=Round_End")
 		register_event("SendAudio", "Event_Terroristwin", "a", "2&%!MRAD_terwin")
 		register_event("SendAudio", "Event_CTwin", "a", "2=%!MRAD_ctwin")
-		register_forward(FM_ClientUserInfoChanged, "fw_ClientUserInfoChanged_Post", 1)
+		register_forward(FM_ClientUserInfoChanged, "Fw_ClientUserInfoChanged_Post", 1)
 	#endif
 
 	register_logevent("Logev_Roundstart", 2, "1=Round_Start")
@@ -681,7 +681,7 @@ public Event_CTwin()
 	#endif
 }
 
-public fw_ClientUserInfoChanged(id)
+public Fw_ClientUserInfoChanged_Post(id)
 {
 	new szNewName[MAX_NAME_LENGTH]
 	get_user_name(id, szNewName, charsmax(szNewName))
