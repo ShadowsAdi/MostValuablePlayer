@@ -194,19 +194,19 @@ public plugin_init()
 		RegisterHookChain(RG_RoundEnd, "RG_Round_End")
 		RegisterHookChain(RG_CSGameRules_ClientUserInfoChanged, "RG_ClientUserInfoChanged_Post", 1)
 	#else
-		register_event("TextMsg", "event_Game_Restart", "a", "2&#Game_C", "2&#Game_w")
+		register_event("TextMsg", "Event_Game_Restart", "a", "2&#Game_C", "2&#Game_w")
 		RegisterHam(Ham_TakeDamage, "player", "Ham_Player_Damage_Post", 1)
 		RegisterHam(Ham_Killed, "player", "Ham_Player_Killed_Post", 1)
-		register_logevent("logev_roundend", 2, "1=Round_End")
-		register_event("SendAudio", "event_twin", "a", "2&%!MRAD_terwin")
-		register_event("SendAudio", "event_ctwin", "a", "2=%!MRAD_ctwin")
-		register_forward(FM_ClientUserInfoChanged, "fw_ClientUserInfoChanged_Post", 1)
+		register_logevent("Logev_Roundend", 2, "1=Round_End")
+		register_event("SendAudio", "Event_Terroristwin", "a", "2&%!MRAD_terwin")
+		register_event("SendAudio", "Event_CTwin", "a", "2=%!MRAD_ctwin")
+		register_forward(FM_ClientUserInfoChanged, "fw_ClientUserInfoChanged", 1)
 	#endif
 
-	register_logevent("logev_roundstart", 2, "1=Round_Start")
+	register_logevent("Logev_Roundstart", 2, "1=Round_Start")
 
 	#if defined TESTING
-	register_clcmd("say /test", "clcmd_say_test")
+	register_clcmd("say /test", "Clcmd_Say_Test")
 	#endif
 
 	g_fwScenario = CreateMultiForward("mvp_scenario", ET_IGNORE, FP_CELL)
@@ -346,7 +346,7 @@ public plugin_precache()
 					{
 						if(szValue[0] == EOS)
 						{
-							log_reading_error(SQL_HOSTNAME)
+							LogReadingError(SQL_HOSTNAME)
 						}
 						copy(g_eDBConfig[MYSQL_HOST], charsmax(g_eDBConfig[MYSQL_HOST]), szValue)
 					}
@@ -354,7 +354,7 @@ public plugin_precache()
 					{
 						if(szValue[0] == EOS)
 						{
-							log_reading_error(SQL_USERNAME)
+							LogReadingError(SQL_USERNAME)
 						}
 						copy(g_eDBConfig[MYSQL_USER], charsmax(g_eDBConfig[MYSQL_USER]), szValue)
 					}
@@ -362,7 +362,7 @@ public plugin_precache()
 					{
 						if(szValue[0] == EOS)
 						{
-							log_reading_error(SQL_PASSWORD)
+							LogReadingError(SQL_PASSWORD)
 						}
 						copy(g_eDBConfig[MYSQL_PASS], charsmax(g_eDBConfig[MYSQL_PASS]), szValue)
 					}
@@ -370,7 +370,7 @@ public plugin_precache()
 					{
 						if(szValue[0] == EOS)
 						{
-							log_reading_error(SQL_DATABASE)
+							LogReadingError(SQL_DATABASE)
 						}
 						copy(g_eDBConfig[MYSQL_DB], charsmax(g_eDBConfig[MYSQL_DB]), szValue)
 					}
@@ -378,7 +378,7 @@ public plugin_precache()
 					{
 						if(szValue[0] == EOS)
 						{
-							log_reading_error(SQL_DBTABLE)
+							LogReadingError(SQL_DBTABLE)
 						}
 						copy(g_eDBConfig[MYSQL_TABLE], charsmax(g_eDBConfig[MYSQL_TABLE]), szValue)
 					}
@@ -386,7 +386,7 @@ public plugin_precache()
 					{
 						if(szValue[0] == EOS)
 						{
-							log_reading_error(NVAULT_DATABASE)
+							LogReadingError(NVAULT_DATABASE)
 						}
 						copy(g_eDBConfig[NVAULT_DB], charsmax(g_eDBConfig[NVAULT_DB]), szValue)
 					}
@@ -394,7 +394,7 @@ public plugin_precache()
 					{
 						if(szValue[0] == EOS)
 						{
-							log_reading_error(AUTH_METHOD)
+							LogReadingError(AUTH_METHOD)
 						}
 						g_bAuthData = bool:clamp(str_to_num(szValue), 0, 1)
 					}
@@ -469,10 +469,9 @@ public client_putinserver(id)
 
 	g_bDisableTracks[id] = false
 
-	if(!is_user_bot(id) && !is_user_hltv(id))
-	{
-		LoadPlayerData(id)
-	}
+	g_iPlayerMVP[id] = 0
+
+	LoadPlayerData(id)
 }
 
 public client_disconnected(id)
@@ -492,10 +491,7 @@ public client_disconnected(id)
 		g_eMVPlayer[iPlanter] = -1
 	}
 
-	if(!is_user_bot(id) && !is_user_hltv(id))
-	{
-		SavePlayerData(id)
-	}
+	SavePlayerData(id)
 
 	g_iKills[id] = 0
 
@@ -589,17 +585,19 @@ public RG_ClientUserInfoChanged_Post(id, infobuffer[])
 {
 	if(containi(infobuffer, "name") != -1)
 	{
-		get_user_name(id, g_szName[id], charsmax(g_szName[]))
-
 		if(g_iSaveInstant)
 		{
 			SavePlayerData(id)
 		}
+
+		copyc(g_szName[id], charsmax(g_szName[]), infobuffer[containi(infobuffer, "name") + 5], '\')
+
+		LoadPlayerData(id)
 	}
 }
 
 #else
-public event_Game_Restart()
+public Event_Game_Restart()
 {
 	new iPlayers[32], iNum
 	get_players(iPlayers, iNum, "ch")
@@ -644,14 +642,14 @@ public Ham_Player_Killed_Post(iVictim, iAttacker)
 	return HAM_IGNORED
 }
 
-public logev_roundend()
+public Logev_Roundend()
 {
 	set_task(1.0, "task_check_scenario")
 
 	return PLUGIN_CONTINUE
 }
 
-public event_twin()
+public Event_Terroristwin()
 {
 	if(g_bIsBombPlanted)
 	{
@@ -663,11 +661,11 @@ public event_twin()
 	}
 
 	#if defined TESTING
-	client_print(0, print_chat, "event_twin called")
+	client_print(0, print_chat, "Event_Terroristwin called")
 	#endif
 }
 
-public event_ctwin()
+public Event_CTwin()
 {
 	if(g_bIsBombDefused)
 	{
@@ -679,28 +677,36 @@ public event_ctwin()
 	}
 
 	#if defined TESTING
-	client_print(0, print_chat, "event_ctwin called")
+	client_print(0, print_chat, "Event_CTwin called")
 	#endif
 }
 
-public fw_ClientUserInfoChanged_Post(id)
+public fw_ClientUserInfoChanged(id)
 {
 	new szNewName[MAX_NAME_LENGTH]
-	pev(id, pev_netname, szNewName, charsmax(szNewName))
+	get_user_name(id, szNewName, charsmax(szNewName))
 
 	if(!equal(g_szName[id], szNewName))
 	{
-		copy(g_szName[id], charsmax(g_szName[]), szNewName)
-
 		if(g_iSaveInstant)
 		{
 			SavePlayerData(id)
 		}
+
+		copy(g_szName[id], charsmax(g_szName[]), szNewName)
+
+		g_iUserSelectedTrack[id] = -1
+
+		g_bDisableTracks[id] = false
+
+		g_iPlayerMVP[id] = 0
+
+		LoadPlayerData(id)
 	}
 }
 #endif
 
-public logev_roundstart()
+public Logev_Roundstart()
 {
 	new iPlayers[32], iNum, iPlayer
 	get_players(iPlayers, iNum, "ch")
@@ -810,7 +816,7 @@ public bomb_defused(id)
 }
 
 #if defined TESTING
-public clcmd_say_test(id)
+public Clcmd_Say_Test(id)
 {
 	client_print(id, print_chat, "Scenario: %d", g_iScenario)
 
@@ -883,19 +889,15 @@ public mvp_menu_handle(id, menu, item)
 
 public Clcmd_ChooseTrack(id)
 {
-	new szTemp[128], eTrack[Tracks]
-	static szSecTemp[32]
+	new szTemp[128], eTrack[Tracks], szSecTemp[32]
 
 	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_CHOOSE_TRACK")
 	new menu = menu_create(szTemp, "choose_track_handle")
 
-	if(szSecTemp[0] == EOS)
-	{
-		formatex(szSecTemp, charsmax(szSecTemp), "%L", LANG_PLAYER, "MVP_VIP_ONLY")
-	}
-
 	if(g_bExistTracks)
 	{
+		formatex(szSecTemp, charsmax(szSecTemp), "%L", LANG_PLAYER, "MVP_VIP_ONLY")
+
 		for(new i; i < g_iTracksNum; i++)
 		{
 			ArrayGetArray(g_aTracks, i, eTrack)
@@ -906,7 +908,7 @@ public Clcmd_ChooseTrack(id)
 	}
 	else
 	{
-		formatex(szTemp, charsmax(szTemp), "\w%L", LANG_SERVER, "MVP_NO_TRACKS_LOADED")
+		formatex(szTemp, charsmax(szTemp), "\w%L", LANG_PLAYER, "MVP_NO_TRACKS_LOADED")
 		menu_additem(menu, szTemp)
 	}
 
@@ -917,7 +919,7 @@ public choose_track_handle(id, menu, item)
 {
 	if(item == MENU_EXIT || !is_user_connected(id) || !g_bExistTracks)
 	{
-		return MenuExit(menu)
+		goto __EXIT
 	}
 
 	new bool:bSameTrack, eTracks[Tracks]
@@ -929,7 +931,7 @@ public choose_track_handle(id, menu, item)
 
 	ArrayGetArray(g_aTracks, item, eTracks)
 
-	if(eTracks[iVipOnly] && !is_user_vip(id))
+	if(eTracks[iVipOnly] && !IsUserVip(id))
 	{
 		CC_SendMessage(id, "^1%L", LANG_PLAYER, "MVP_TRACK_VIP_ONLY")
 		goto __EXIT
@@ -957,19 +959,15 @@ public choose_track_handle(id, menu, item)
 
 public Clcmd_TrackList(id)
 {
-	new szTemp[128], eTrack[Tracks]
-	static szSecTemp[32]
+	new szTemp[128], eTrack[Tracks], szSecTemp[32]
 
 	formatex(szTemp, charsmax(szTemp), "%s %L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_TRACK_LIST_TITLE")
 	new menu = menu_create(szTemp, "clcmd_tracklist_handle")
 
-	if(szSecTemp[0] == EOS)
-	{
-		formatex(szSecTemp, charsmax(szSecTemp), "%L", LANG_PLAYER, "MVP_VIP_ONLY")
-	}
-
 	if(g_bExistTracks)
 	{
+		formatex(szSecTemp, charsmax(szSecTemp), "%L", LANG_PLAYER, "MVP_VIP_ONLY")
+
 		for(new i; i < g_iTracksNum; i++)
 		{
 			ArrayGetArray(g_aTracks, i, eTrack)
@@ -980,7 +978,7 @@ public Clcmd_TrackList(id)
 	}
 	else 
 	{
-		formatex(szTemp, charsmax(szTemp), "\w%L", LANG_SERVER, "MVP_NO_TRACKS_LOADED")
+		formatex(szTemp, charsmax(szTemp), "\w%L", LANG_PLAYER, "MVP_NO_TRACKS_LOADED")
 		menu_additem(menu, szTemp)
 	}
 	menu_display(id, menu)
@@ -1066,6 +1064,11 @@ DetectSaveType()
 
 LoadPlayerData(id)
 {
+	if(!is_user_bot(id) && !is_user_hltv(id))
+	{
+		return PLUGIN_HANDLED
+	}
+
 	switch(g_iSaveType)
 	{
 		case NVAULT:
@@ -1124,7 +1127,7 @@ LoadPlayerData(id)
 				}
 			}
 
-			 _free_handle:
+			_free_handle:
 			SQL_FreeHandle(iQuery)
 		}
 	}
@@ -1134,6 +1137,11 @@ LoadPlayerData(id)
 
 SavePlayerData(id)
 {
+	if(!is_user_bot(id) && !is_user_hltv(id))
+	{
+		return PLUGIN_HANDLED
+	}
+
 	switch(g_iSaveType)
 	{
 		case NVAULT:
@@ -1169,7 +1177,7 @@ CalculateTopKiller(WinScenario:status)
 
 	new iPlayers[32], iNum, iPlayer
 
-	get_players(iPlayers, iNum, "ch", status == KILLER_MVP_TERO ? "T" : "CT")
+	get_players(iPlayers, iNum, "ceh", status == KILLER_MVP_TERO ? "TERRORIST" : "CT")
 
 	new iFrags, iTemp, iTempID, bool:bIsValid
 	for(new i; i < iNum; i++)
@@ -1333,18 +1341,20 @@ PlayTrack(iIndex)
 	if(g_iUserSelectedTrack[iIndex] != -1 && g_iUserSelectedTrack[iIndex] <= ArraySize(g_aTracks))
 	{
 		ArrayGetArray(g_aTracks, g_iUserSelectedTrack[iIndex], eTrack)
-		if(eTrack[iVipOnly] && !is_user_vip(iIndex))
+		if(eTrack[iVipOnly] && !IsUserVip(iIndex))
 		{
-			if(g_bNotOnlyVip)
 			{
-				bTakeTemp = true
+				if(g_bNotOnlyVip)
+				{
+					bTakeTemp = true
+				}
+				g_iUserSelectedTrack[iIndex] = -1
 			}
-			g_iUserSelectedTrack[iIndex] = -1
-		}	
+		}
 	}
 	else
 	{
-		if(!is_user_vip(iIndex) && g_bNotOnlyVip)
+		if(!IsUserVip(iIndex) && g_bNotOnlyVip)
 		{
 			bTakeTemp = true
 		}
@@ -1352,19 +1362,19 @@ PlayTrack(iIndex)
 		new iSize = ArraySize(bTakeTemp ? aTempArray : g_aTracks)
 
 		iRandom = iSize > 1 ? random_num(0, iSize - 1) : (iSize - 1)
-	}
 
-	if(bTakeTemp)
-	{
-		iTempID = ArrayGetCell(aTempArray, iRandom)
+		if(bTakeTemp)
+		{
+			iTempID = ArrayGetCell(aTempArray, iRandom)
+		}
+
+		ArrayGetArray(g_aTracks, bTakeTemp ? iTempID : iRandom , eTrack)
 	}
 
 	if(g_bNotOnlyVip)
 	{
 		ArrayDestroy(aTempArray)
 	}
-
-	ArrayGetArray(g_aTracks, bTakeTemp ? iTempID : iRandom , eTrack)
 
 	copy(g_szPlayingTrack, charsmax(g_szPlayingTrack), eTrack[szNAME])
 	ReplaceMColors(g_szPlayingTrack, charsmax(g_szPlayingTrack))
@@ -1408,7 +1418,7 @@ ReplaceMColors(szString[], iLen)
 	return szTemp
 }
 
-is_user_vip(id)
+IsUserVip(id)
 {
 	if(g_iVipFlag < 0)
 	{
@@ -1430,13 +1440,19 @@ FindCharPos(Char[])
 	return -1;
 }
 
-log_reading_error(const szError[])
+LogReadingError(const szError[])
 {
 	log_to_file(LOG_FILE, "[MVP] You have a missing parameter on line ^"%s^"", szError)
 }
 
 public native_get_user_mvp_kills(iPluginID, iParamNum)
 {
+	if(iParamNum != 1)
+	{
+		log_error(AMX_ERR_NATIVE, "[MVP] Invalid param num ! Valid: (PlayerID)")
+		return NATIVE_ERROR
+	}
+
 	new id = get_param(1)
 
 	if(!IsPlayer(id))
@@ -1449,6 +1465,12 @@ public native_get_user_mvp_kills(iPluginID, iParamNum)
 }
 public native_get_user_mvp_topkiller(iPluginID, iParamNum)
 {
+	if(iParamNum != 1)
+	{
+		log_error(AMX_ERR_NATIVE, "[MVP] Invalid param num ! Valid: (PlayerID)")
+		return NATIVE_ERROR
+	}
+
 	new id = get_param(1)
 
 	if(!IsPlayer(id))
@@ -1462,6 +1484,12 @@ public native_get_user_mvp_topkiller(iPluginID, iParamNum)
 
 public native_get_user_mvp_damage(iPluginID, iParamNum)
 {
+	if(iParamNum != 1)
+	{
+		log_error(AMX_ERR_NATIVE, "[MVP] Invalid param num ! Valid: (PlayerID)")
+		return NATIVE_ERROR
+	}
+
 	new id = get_param(1)
 
 	if(!IsPlayer(id))
@@ -1475,6 +1503,12 @@ public native_get_user_mvp_damage(iPluginID, iParamNum)
 
 public native_get_user_mvp_hs_damage(iPluginID, iParamNum)
 {
+	if(iParamNum != 1)
+	{
+		log_error(AMX_ERR_NATIVE, "[MVP] Invalid param num ! Valid: (PlayerID)")
+		return NATIVE_ERROR
+	}
+
 	new id = get_param(1)
 
 	if(!IsPlayer(id))
@@ -1488,6 +1522,12 @@ public native_get_user_mvp_hs_damage(iPluginID, iParamNum)
 
 public native_get_user_mvp(iPluginID, iParamNum)
 {
+	if(iParamNum != 1)
+	{
+		log_error(AMX_ERR_NATIVE, "[MVP] Invalid param num ! Valid: (PlayerID)")
+		return NATIVE_ERROR
+	}
+
 	new id = get_param(1)
 
 	if(!IsPlayer(id))
