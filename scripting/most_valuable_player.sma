@@ -38,7 +38,7 @@ const m_LastHitGroup = 					75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"2.5"
+#define VERSION 						"2.6"
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= g_iMaxPlayers)
@@ -223,6 +223,8 @@ public plugin_natives()
 	register_native("get_user_mvp_damage", "native_get_user_mvp_damage")
 	register_native("get_user_mvp_hs_damage", "native_get_user_mvp_hs_damage")
 	register_native("get_user_mvps", "native_get_user_mvp")
+	register_native("get_user_mvp_track", "native_get_user_mvp_track")
+	register_native("get_mvp_track_info", "native_get_mvp_track_info")
 
 	g_aTracks = ArrayCreate(Tracks)
 }
@@ -260,6 +262,7 @@ public plugin_precache()
 	if(iFile)
 	{
 		new szData[128], iSection, szString[64], szValue[64], eTrack[Tracks], szTemp[3]
+		new szErrorMsg[128], szHudColorR[4], szHudColorG[4], szHudColorB[4], szHudPosX[5], szHudPosY[5]
 
 		while(fgets(iFile, szData, charsmax(szData)))
 		{
@@ -282,11 +285,6 @@ public plugin_precache()
 
 					eTrack[iVipOnly] = str_to_num(szTemp)
 
-					if(!eTrack[iVipOnly])
-					{
-						g_bNotOnlyVip = true
-					}
-
 					#if defined TESTING
 					server_print("Name: %s", eTrack[szNAME])
 					server_print("Path: %s", eTrack[szPATH])
@@ -295,12 +293,16 @@ public plugin_precache()
 
 					if(!file_exists(eTrack[szPATH]))
 					{
-						new szErrorMsg[128]
 						formatex(szErrorMsg, charsmax(szErrorMsg), "Error. Can't precache sound %s, file doesn't exist!", eTrack[szPATH])
 						log_to_file(LOG_FILE, szErrorMsg)
 						continue
 					}
 					precache_generic(eTrack[szPATH])
+
+					if(!eTrack[iVipOnly])
+					{
+						g_bNotOnlyVip = true
+					}
 
 					g_iTracksNum += 1
 
@@ -348,7 +350,10 @@ public plugin_precache()
 						{
 							LogReadingError(SQL_HOSTNAME)
 						}
-						copy(g_eDBConfig[MYSQL_HOST], charsmax(g_eDBConfig[MYSQL_HOST]), szValue)
+						else
+						{
+							copy(g_eDBConfig[MYSQL_HOST], charsmax(g_eDBConfig[MYSQL_HOST]), szValue)							
+						}
 					}
 					else if(equal(szString, SQL_USERNAME))
 					{
@@ -356,7 +361,9 @@ public plugin_precache()
 						{
 							LogReadingError(SQL_USERNAME)
 						}
-						copy(g_eDBConfig[MYSQL_USER], charsmax(g_eDBConfig[MYSQL_USER]), szValue)
+						else
+							copy(g_eDBConfig[MYSQL_USER], charsmax(g_eDBConfig[MYSQL_USER]), szValue)
+						}						
 					}
 					else if(equal(szString, SQL_PASSWORD))
 					{
@@ -364,7 +371,10 @@ public plugin_precache()
 						{
 							LogReadingError(SQL_PASSWORD)
 						}
-						copy(g_eDBConfig[MYSQL_PASS], charsmax(g_eDBConfig[MYSQL_PASS]), szValue)
+						else
+						{
+							copy(g_eDBConfig[MYSQL_PASS], charsmax(g_eDBConfig[MYSQL_PASS]), szValue)
+						}						
 					}
 					else if(equal(szString, SQL_DATABASE))
 					{
@@ -372,7 +382,10 @@ public plugin_precache()
 						{
 							LogReadingError(SQL_DATABASE)
 						}
-						copy(g_eDBConfig[MYSQL_DB], charsmax(g_eDBConfig[MYSQL_DB]), szValue)
+						else
+						{
+							copy(g_eDBConfig[MYSQL_DB], charsmax(g_eDBConfig[MYSQL_DB]), szValue)
+						}						
 					}
 					else if(equal(szString, SQL_DBTABLE))
 					{
@@ -380,7 +393,10 @@ public plugin_precache()
 						{
 							LogReadingError(SQL_DBTABLE)
 						}
-						copy(g_eDBConfig[MYSQL_TABLE], charsmax(g_eDBConfig[MYSQL_TABLE]), szValue)
+						else
+						{
+							copy(g_eDBConfig[MYSQL_TABLE], charsmax(g_eDBConfig[MYSQL_TABLE]), szValue)
+						}						
 					}
 					else if(equal(szString, NVAULT_DATABASE))
 					{
@@ -388,7 +404,10 @@ public plugin_precache()
 						{
 							LogReadingError(NVAULT_DATABASE)
 						}
-						copy(g_eDBConfig[NVAULT_DB], charsmax(g_eDBConfig[NVAULT_DB]), szValue)
+						else
+						{
+							copy(g_eDBConfig[NVAULT_DB], charsmax(g_eDBConfig[NVAULT_DB]), szValue)
+						}
 					}
 					else if(equal(szString, AUTH_METHOD))
 					{
@@ -415,7 +434,6 @@ public plugin_precache()
 					}
 					else if(equal(szString, HUD_COLOR))
 					{
-						new szHudColorR[4], szHudColorG[4], szHudColorB[4]
 						parse(szValue, szHudColorR, charsmax(szHudColorR), szHudColorG, charsmax(szHudColorG), szHudColorB, charsmax(szHudColorB))
 						g_iHudColor[HudColorR] = str_to_num(szHudColorR)
 						g_iHudColor[HudColorG] = str_to_num(szHudColorG)
@@ -423,7 +441,6 @@ public plugin_precache()
 					}
 					else if(equal(szString, HUD_POSITION))
 					{
-						new szHudPosX[5], szHudPosY[5]
 						parse(szValue, szHudPosX, charsmax(szHudPosX), szHudPosY, charsmax(szHudPosY))
 						g_fHudPos[HudPosX] = str_to_float(szHudPosX)
 						g_fHudPos[HudPosY] = str_to_float(szHudPosY)
@@ -572,7 +589,7 @@ public RG_Round_End(WinStatus:status, ScenarioEventEndRound:event, Float:fDelay)
 			}
 		}
 	}
-	set_task(1.0, "task_check_scenario")
+	set_task(1.0, "Task_Check_Scenario")
 
 	#if defined TESTING
 	client_print(0, print_chat, "rg_round_end() called")
@@ -644,7 +661,7 @@ public Ham_Player_Killed_Post(iVictim, iAttacker)
 
 public Logev_Roundend()
 {
-	set_task(1.0, "task_check_scenario")
+	set_task(1.0, "Task_Check_Scenario")
 
 	return PLUGIN_CONTINUE
 }
@@ -695,12 +712,6 @@ public Fw_ClientUserInfoChanged_Post(id)
 
 		copy(g_szName[id], charsmax(g_szName[]), szNewName)
 
-		g_iUserSelectedTrack[id] = -1
-
-		g_bDisableTracks[id] = false
-
-		g_iPlayerMVP[id] = 0
-
 		LoadPlayerData(id)
 	}
 }
@@ -727,7 +738,7 @@ public Logev_Roundstart()
 	g_bIsBombPlanted = false
 }
 
-public task_check_scenario()
+public Task_Check_Scenario()
 {
 	switch(g_iScenario)
 	{
@@ -840,7 +851,7 @@ public Clcmd_MVPMenu(id)
 	new szTemp[128]
 
 	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_MENU_TITLE")
-	new menu = menu_create(szTemp, "mvp_menu_handle")
+	new menu = menu_create(szTemp, "Mvp_Menu_Handle")
 
 	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_PLAYER, "MVP_CHOOSE_TRACK")
 	menu_additem(menu, szTemp)
@@ -854,7 +865,7 @@ public Clcmd_MVPMenu(id)
 	menu_display(id, menu)
 }
 
-public mvp_menu_handle(id, menu, item)
+public Mvp_Menu_Handle(id, menu, item)
 {
 	if(item == MENU_EXIT || !is_user_connected(id))
 	{
@@ -892,7 +903,7 @@ public Clcmd_ChooseTrack(id)
 	new szTemp[128], eTrack[Tracks], szSecTemp[32]
 
 	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_CHOOSE_TRACK")
-	new menu = menu_create(szTemp, "choose_track_handle")
+	new menu = menu_create(szTemp, "Choose_Track_Handle")
 
 	if(g_bExistTracks)
 	{
@@ -915,7 +926,7 @@ public Clcmd_ChooseTrack(id)
 	menu_display(id, menu)
 }
 
-public choose_track_handle(id, menu, item)
+public Choose_Track_Handle(id, menu, item)
 {
 	if(item == MENU_EXIT || !is_user_connected(id) || !g_bExistTracks)
 	{
@@ -962,7 +973,7 @@ public Clcmd_TrackList(id)
 	new szTemp[128], eTrack[Tracks], szSecTemp[32]
 
 	formatex(szTemp, charsmax(szTemp), "%s %L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_TRACK_LIST_TITLE")
-	new menu = menu_create(szTemp, "clcmd_tracklist_handle")
+	new menu = menu_create(szTemp, "Clcmd_Tracklist_Handle")
 
 	if(g_bExistTracks)
 	{
@@ -984,7 +995,7 @@ public Clcmd_TrackList(id)
 	menu_display(id, menu)
 }
 
-public clcmd_tracklist_handle(id, menu, item)
+public Clcmd_Tracklist_Handle(id, menu, item)
 {
 	if(item == MENU_EXIT || !is_user_connected(id))
 	{
@@ -1021,13 +1032,18 @@ DetectSaveType()
 		case SQL, SQL_LITE:
 		{
 			static iTry
-			if(g_iSaveType == SQL_LITE || iTry == MAX_CONNECT_TRY)
+			if(g_iSaveType == SQL_LITE || iTry == MAX_CONNECT_TRY || !CheckValidDatabase())
 			{
 				SQL_SetAffinity("sqlite")
 
 				if(iTry)
 				{
 					log_to_file(LOG_FILE, "MVP: Failed to connect to MySql Database, switched to SqLite!")
+				}
+
+				if(!CheckValidDatabase())
+				{
+					log_to_file(LOG_FILE, "MVP: One or more data field for database is empty. Switched to SqLite!")
 				}
 			}
 
@@ -1064,7 +1080,7 @@ DetectSaveType()
 
 LoadPlayerData(id)
 {
-	if(!is_user_bot(id) && !is_user_hltv(id))
+	if(is_user_bot(id) && is_user_hltv(id))
 	{
 		return PLUGIN_HANDLED
 	}
@@ -1137,7 +1153,7 @@ LoadPlayerData(id)
 
 SavePlayerData(id)
 {
-	if(!is_user_bot(id) && !is_user_hltv(id))
+	if(is_user_bot(id) && is_user_hltv(id))
 	{
 		return PLUGIN_HANDLED
 	}
@@ -1447,6 +1463,15 @@ LogReadingError(const szError[])
 	log_to_file(LOG_FILE, "[MVP] You have a missing parameter on line ^"%s^"", szError)
 }
 
+bool:CheckValidDatabase()
+{
+	if(g_eDBConfig[MYSQL_HOST][0] != EOS && g_eDBConfig[MYSQL_USER][0] != EOS && g_eDBConfig[MYSQL_PASS][0] != EOS && g_eDBConfig[MYSQL_DB][0] != EOS)
+	{
+		return true
+	}
+	return false
+}
+
 public native_get_user_mvp_kills(iPluginID, iParamNum)
 {
 	if(iParamNum != 1)
@@ -1465,6 +1490,7 @@ public native_get_user_mvp_kills(iPluginID, iParamNum)
 
 	return g_iKills[g_eMVPlayer[iTopKiller]]
 }
+
 public native_get_user_mvp_topkiller(iPluginID, iParamNum)
 {
 	if(iParamNum != 1)
@@ -1539,4 +1565,49 @@ public native_get_user_mvp(iPluginID, iParamNum)
 	}
 
 	return g_iPlayerMVP[id]
+}
+
+public native_get_user_mvp_track(iPluginID, iParamNum)
+{
+	if(iParamNum != 1)
+	{
+		log_error(AMX_ERR_NATIVE, "[MVP] Invalid param num ! Valid: (PlayerID)")
+		return NATIVE_ERROR
+	}
+
+	new id = get_param(1)
+
+	if(!IsPlayer(id))
+	{
+		log_error(AMX_ERR_NATIVE, "[MVP] Player is not connected (%d)", id)
+		return NATIVE_ERROR
+	}
+
+	return g_iUserSelectedTrack[id]
+}
+
+public native_get_mvp_track_info(iPluginID, iParamNum)
+{
+	if(iParamNum != 5)
+	{
+		log_error(AMX_ERR_NATIVE, "[MVP] Invalid param num ! Valid: (TrackID, szName, iNameLen, szPath, iPathLen)")
+		return NATIVE_ERROR
+	}
+
+	new iTrackID = get_param(1)
+	new iSize = ArraySize(g_aTracks)
+
+	if(0 > iTrackID || iSize < iTrackID )
+	{
+		log_error(AMX_ERR_NATIVE, "[MVP] Invalid TrackID ! Got ^"%d^", Expected ( Min: ^"%d^" | Max: ^"%d^" )", iTrackID, 0, iSize - 1)
+		return NATIVE_ERROR
+	}
+
+	new iData[Tracks]
+	ArrayGetArray(g_aTracks, iTrackID, iData)
+
+	set_string(2, ReplaceMColors(iData[szNAME], charsmax(iData[szNAME])), get_param(3))
+	set_string(4, iData[szPATH], get_param(5))
+
+	return 1
 }

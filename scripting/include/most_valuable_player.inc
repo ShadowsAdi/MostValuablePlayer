@@ -24,46 +24,74 @@ enum WinScenario
  * @description			Multiforward called when a round end.
  *
  * @param scenario		Scenario index. See WinScenario enum
+ * 
  * @return				Scenario index.
  */
 forward mvp_scenario(WinScenario:scenario);
 
 /**
- * Returns player's MVP kills.
+ * @description     	Returns player's MVP kills.
  *
- * @param id		Player index.
- * @return			Amount of kills. -1 on error.
+ * @param id			Player index.
+ * 
+ * @return				Amount of kills. -1 on error.
  */
 native get_user_mvp_kills(id);
 
 /**
- * Returns top killer's index.
+ * @description    		Returns top killer's index.
  *
- * @param id		Top killer index.
- * @return			Top killer's index. -1 on error.
+ * @param id			Top killer index.
+ * 
+ * @return				Top killer's index. -1 on error.
  */
 native get_user_mvp_topkiller(id);
 
 /**
- * Returns player's MVP damage.
+ * @description     	Returns player's MVP damage.
  *
- * @param id		Player index.
- * @return			Player index. -1 on error.
+ * @param id			Player index.
+ * 
+ * @return				Player index. -1 on error.
  */
 native get_user_mvp_damage(id);
 
 /**
- * Returns player's MVP damage made with headshot.
+ * @description     	Returns player's MVP damage made with headshot.
  *
- * @param id		Player index.
- * @return			Player index. -1 on error.
+ * @param id			Player index.
+ * 
+ * @return				Player index. -1 on error.
  */
 native get_user_mvp_hs_damage(id);
 
 /**
- * Returns Player's MVPs.
+ * @description     	Returns Player's MVPs.
  *
- * @param id		Player index.
- * @return			Player index. -1 on error.
+ * @param id			Player index.
+ * 
+ * @return				Player index. -1 on error.
  */
 native get_user_mvps(id);
+
+/**
+ * @description     	Returns Player's selected Track.
+ *
+ * @param id        	Player index.
+ * 
+ * @return          	Player index. -1 on error.
+ */
+native get_user_mvp_track(id);
+
+/**
+ * @description     	Returns informations about certain Track.
+ *
+ * @param iTrackID		Track index.
+ * @param szName[]		Variable to store track name.
+ * @param iNameLen 		Track name lenght.
+ * @param szPath[]		Variable to store track's path.
+ * @param iPathLen     	Track path lenght.
+ * 
+ * @return          	1 on success. -1 if TrackID is invalid or on error.
+ */
+native get_mvp_track_info(iTrackID, szName[], iNameLen, szPath[], iPathLen)
