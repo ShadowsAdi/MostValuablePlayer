@@ -362,6 +362,7 @@ public plugin_precache()
 							LogReadingError(SQL_USERNAME)
 						}
 						else
+						{
 							copy(g_eDBConfig[MYSQL_USER], charsmax(g_eDBConfig[MYSQL_USER]), szValue)
 						}						
 					}
