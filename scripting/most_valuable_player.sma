@@ -318,9 +318,6 @@ public plugin_precache()
 					trim(szString)
 					trim(szValue)
 
-					if(szValue[0] == EOS)
-						continue
-
 					if(equal(szString, CHAT_PREFIX))
 					{
 						copy(g_szPrefix[PREFIX_CHAT], charsmax(g_szPrefix[PREFIX_CHAT]), szValue)
