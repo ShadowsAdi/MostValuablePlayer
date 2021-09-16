@@ -202,3 +202,4 @@ NO_MVP_SHOW_HUD = Zaden gracz nie byl wystarczajaco dobry w tej rundzie.
 MVP_NO_TRACKS_LOADED = Utwory nie zostaly wczytane
 MVP_VIP_ONLY = \r[Tylko dla VIP-a]
 MVP_TRACK_VIP_ONLY = Wybrany utwor jest tylko dla graczy ^4VIP^1.
+MVP_PLAYING_TRACK = Odtwarzanie utworu:
