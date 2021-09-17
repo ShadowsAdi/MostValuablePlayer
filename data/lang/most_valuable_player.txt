@@ -182,3 +182,24 @@ MVP_NO_TRACKS_LOADED = Nyama nalichni melodii.
 MVP_VIP_ONLY = \r[VIP Only]
 MVP_TRACK_VIP_ONLY = Tazi melodiya e samo za ^4V.I.P^1 igrachi.
 MVP_PLAYING_TRACK = Vuzproizvejda se Melodiya:
+
+[pl]
+MVP_MENU_TITLE = MVP Menu
+MVP_CHOOSE_TRACK = Wybierz utwor
+MVP_TRACK_LIST = Pokaz utwory
+MVP_SOUNDS_ON_OFF = Dzwieki MVP: \y%s
+MVP_TRACK_X_SELECTED = Wybrano utwor: ^4%s
+MVP_TRACK_X_DESELECTED = Utwor zostal odznaczony: ^4%s
+MVP_TRACK_LIST_TITLE = Lista utworow
+MVP_KILLER_SHOW_CHAT = Najlepszy gracz rundy: ^3%s^1 za ^4zabicie %i graczy.
+MVP_KILLER_SHOW_HUD = Najlepszy gracz rundy: %s za zabicie %i graczy.
+MVP_DEFUSER_SHOW_CHAT = Najlepszy gracz rundy: ^3%s^1 za ^4rozbrojenie bomby.
+MVP_DEFUSER_SHOW_HUD = Najlepszy gracz rundy: %s za rozbrojenie bomby.
+MVP_PLANTER_SHOW_CHAT = Najlepszy gracz rundy: ^3%s^1 za ^4podlozenie bomby.
+MVP_PLANTER_SHOW_HUD = Najlepszy gracz rundy: %s za podlozenie bomby.
+NO_MVP_SHOW_CHAT = ^3Zaden gracz ^1nie byl^4 wystarczajaco dobry w tej rundzie.^1
+NO_MVP_SHOW_HUD = Zaden gracz nie byl wystarczajaco dobry w tej rundzie.
+MVP_NO_TRACKS_LOADED = Utwory nie zostaly wczytane
+MVP_VIP_ONLY = \r[Tylko dla VIP-a]
+MVP_TRACK_VIP_ONLY = Wybrany utwor jest tylko dla graczy ^4VIP^1.
+MVP_PLAYING_TRACK = Odtwarzanie utworu:
