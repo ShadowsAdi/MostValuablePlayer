@@ -1410,6 +1410,8 @@ PlaySound(id, szTrack[])
 {
 	if(g_IsConnected & ( 1 << ( id & 31 ) ) )
 	{
+	// Stopping any sound playing.
+		client_cmd(id, "stopsound")
 		client_cmd(id, "mp3 play ^"%s^"", szTrack)
 	}
 }
