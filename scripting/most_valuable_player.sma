@@ -225,6 +225,7 @@ public plugin_natives()
 	register_native("get_user_mvps", "native_get_user_mvp")
 	register_native("get_user_mvp_track", "native_get_user_mvp_track")
 	register_native("get_mvp_track_info", "native_get_mvp_track_info")
+	register_native("get_mvp_index", "native_get_mvp_index")
 
 	g_aTracks = ArrayCreate(Tracks)
 }
@@ -1610,4 +1611,29 @@ public native_get_mvp_track_info(iPluginID, iParamNum)
 	set_string(4, iData[szPATH], get_param(5))
 
 	return 1
+}
+
+public native_get_mvp_index(iPluginID, iParamNum)
+{
+	switch(g_iScenario)
+	{
+		case NO_SCENARIO:
+		{
+			return -1
+		}
+		case TERO_MVP:
+		{
+			return g_eMVPlayer[iPlanter]
+		}
+		case CT_MVP:
+		{
+			return g_eMVPlayer[iDefuser]
+		}
+		case KILLER_MVP_TERO , KILLER_MVP_CT:
+		{
+			return g_eMVPlayer[iTopKiller]
+		}
+	}
+
+	return -1
 }

@@ -95,3 +95,12 @@ native get_user_mvp_track(id);
  * @return          	1 on success. -1 if TrackID is invalid or on error.
  */
 native get_mvp_track_info(iTrackID, szName[], iNameLen, szPath[], iPathLen)
+
+/**
+ * @description         Returns MVP of the round index.
+ *
+ * @noparam
+ * 
+ * @return              MVPlayer index. -1 if there is no MVP.
+ */
+native get_mvp_index()
