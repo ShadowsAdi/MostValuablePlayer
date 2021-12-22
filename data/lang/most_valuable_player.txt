@@ -1,5 +1,6 @@
 [en]
 MVP_MENU_TITLE = MVP Menu
+MVP_SHOW_MVP_COUNT = You were \r%d times\y MVP\w!
 MVP_CHOOSE_TRACK = Choose a track
 MVP_TRACK_LIST = View Tracks list
 MVP_SOUNDS_ON_OFF = MVP Sounds: \y%s
@@ -21,6 +22,7 @@ MVP_PLAYING_TRACK = Playing Track:
 
 [ro]
 MVP_MENU_TITLE = Meniu MVP
+MVP_SHOW_MVP_COUNT = Ai fost de \r%d ori\y MVP\w!
 MVP_CHOOSE_TRACK = Alege o melodie
 MVP_TRACK_LIST = Vezi lista melodiilor
 MVP_SOUNDS_ON_OFF = Sunete MVP: \y%s

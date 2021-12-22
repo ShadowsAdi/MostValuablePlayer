@@ -38,7 +38,7 @@ const m_LastHitGroup = 					75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"2.7"
+#define VERSION 						"2.8"
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= g_iMaxPlayers)
@@ -848,7 +848,7 @@ public Clcmd_MVPMenu(id)
 {
 	new szTemp[128]
 
-	formatex(szTemp, charsmax(szTemp), "\r%s \w%L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_MENU_TITLE")
+	formatex(szTemp, charsmax(szTemp), "\r%s \w%L^n^n\w%L", g_szPrefix[PREFIX_MENU], LANG_PLAYER, "MVP_MENU_TITLE", LANG_PLAYER, "MVP_SHOW_MVP_COUNT", g_iPlayerMVP[id])
 	new menu = menu_create(szTemp, "Mvp_Menu_Handle")
 
 	formatex(szTemp, charsmax(szTemp), "\w%L", LANG_PLAYER, "MVP_CHOOSE_TRACK")
@@ -1080,7 +1080,7 @@ LoadPlayerData(id)
 {
 	if(is_user_bot(id) && is_user_hltv(id))
 	{
-		return PLUGIN_HANDLED
+		return
 	}
 
 	switch(g_iSaveType)
@@ -1145,15 +1145,13 @@ LoadPlayerData(id)
 			SQL_FreeHandle(iQuery)
 		}
 	}
-
-	return PLUGIN_HANDLED
 }
 
 SavePlayerData(id)
 {
 	if(is_user_bot(id) && is_user_hltv(id))
 	{
-		return PLUGIN_HANDLED
+		return
 	}
 
 	switch(g_iSaveType)
@@ -1182,8 +1180,6 @@ SavePlayerData(id)
 			SQL_FreeHandle(iQuery)
 		}
 	}
-
-	return PLUGIN_HANDLED
 }
 
 CalculateTopKiller(WinScenario:status)
@@ -1223,12 +1219,11 @@ CalculateTopKiller(WinScenario:status)
 	{
 		case true:
 		{
+			g_iPlayerMVP[g_eMVPlayer[iTopKiller]] += 1
+
 			PlayTrack(g_eMVPlayer[iTopKiller])
 
 			ShowMVP(KILLER_MVP)
-
-			g_iPlayerMVP[g_eMVPlayer[iTopKiller]] += 1
-
 		}
 		case false:
 		{
@@ -1331,6 +1326,11 @@ ShowMVP(WinScenario:iScenario)
 
 PlayTrack(iIndex)
 {
+	if(g_iSaveInstant)
+	{
+		SavePlayerData(iIndex)
+	}
+
 	if(!g_bExistTracks)
 	{
 		return
