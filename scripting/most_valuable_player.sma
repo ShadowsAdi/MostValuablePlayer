@@ -441,8 +441,8 @@ public plugin_precache()
 					else if(equal(szString, HUD_POSITION))
 					{
 						parse(szValue, szHudPosX, charsmax(szHudPosX), szHudPosY, charsmax(szHudPosY))
-						g_fHudPos[HudPosX] = str_to_float(szHudPosX)
-						g_fHudPos[HudPosY] = str_to_float(szHudPosY)
+						g_fHudPos[HudPosX] = _:str_to_float(szHudPosX)
+						g_fHudPos[HudPosY] = _:str_to_float(szHudPosY)
 					}
 					else if(equal(szString, MENU_COMMANDS))
 					{
