@@ -192,7 +192,7 @@ public plugin_init()
 		RegisterHookChain(RG_CBasePlayer_TakeDamage, "RG_Player_Damage_Post", 1)
 		RegisterHookChain(RG_CBasePlayer_Killed, "RG_Player_Killed_Post", 1)
 		RegisterHookChain(RG_RoundEnd, "RG_Round_End")
-		RegisterHookChain(RG_CSGameRules_ClientUserInfoChanged, "RG_ClientUserInfoChanged_Post", 1)
+		RegisterHookChain(RG_CBasePlayer_SetClientUserInfoName, "RG_SetClientUserInfoName_Post", 1)
 	#else
 		register_event("TextMsg", "Event_Game_Restart", "a", "2&#Game_C", "2&#Game_w")
 		RegisterHam(Ham_TakeDamage, "player", "Ham_Player_Damage_Post", 1)
@@ -597,7 +597,7 @@ public RG_Round_End(WinStatus:status, ScenarioEventEndRound:event, Float:fDelay)
 	return HC_CONTINUE
 }
 
-public RG_ClientUserInfoChanged_Post(id, infobuffer[])
+public RG_SetClientUserInfoName_Post(id, infobuffer[], szNewName[])
 {
 	if(containi(infobuffer, "name") != -1)
 	{
@@ -606,7 +606,7 @@ public RG_ClientUserInfoChanged_Post(id, infobuffer[])
 			SavePlayerData(id)
 		}
 
-		copyc(g_szName[id], charsmax(g_szName[]), infobuffer[containi(infobuffer, "name") + 5], '\')
+		copy(g_szName[id], charsmax(g_szName[]), szNewName)
 
 		LoadPlayerData(id)
 	}
