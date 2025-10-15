@@ -64,6 +64,7 @@ new const INSTANT_SAVE[]		=		"INSTANT_SAVE"
 new const MESSAGE_TYPE[]		=		"MESSAGE_TYPE"
 new const HUD_COLOR[]			=		"HUD_COLOR"
 new const HUD_POSITION[]		= 		"HUD_POSITION"
+new const HUD_DURATION[]		=		"HUD_DURATION"
 new const MENU_COMMANDS[]		=		"MENU_COMMANDS"
 new const VIP_ACCESS[]			=		"VIP_ACCESS"
 new const LOG_FILE[]			= 		"mvp_errors.log"
@@ -109,7 +110,8 @@ enum _:HudSettings
 	Float:HudPosY,
 	HudColorR,
 	HudColorG,
-	HudColorB
+	HudColorB,
+	Float:HudDuration
 }
 
 enum _:DBSettings
@@ -165,6 +167,7 @@ new g_iMessageType
 new g_iVipFlag
 
 new g_fHudPos[HudSettings]
+new g_fHudDuration[HudSettings]
 
 new g_fwScenario
 new g_iForwardResult
@@ -443,6 +446,10 @@ public plugin_precache()
 						parse(szValue, szHudPosX, charsmax(szHudPosX), szHudPosY, charsmax(szHudPosY))
 						g_fHudPos[HudPosX] = _:str_to_float(szHudPosX)
 						g_fHudPos[HudPosY] = _:str_to_float(szHudPosY)
+					}
+					else if(equal(szString, HUD_DURATION))
+					{
+						g_fHudDuration[HudDuration] = floatclamp(str_to_float(szValue), 1.0, 99.0)
 					}
 					else if(equal(szString, MENU_COMMANDS))
 					{
@@ -1249,12 +1256,12 @@ ShowMVP(WinScenario:iScenario)
 				}
 				case MVP_DHUD_MSG:
 				{
-					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1, .holdtime=g_fHudDuration[HudDuration])
 					show_dhudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_SERVER, "NO_MVP_SHOW_HUD")
 				}
 				case MVP_HUD_MSG:
 				{
-					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1, .holdtime=g_fHudDuration[HudDuration])
 					show_hudmessage(0, "%s %L", g_szPrefix[PREFIX_HUD], LANG_SERVER, "NO_MVP_SHOW_HUD")
 				}
 			}
@@ -1270,12 +1277,12 @@ ShowMVP(WinScenario:iScenario)
 				}
 				case MVP_DHUD_MSG:
 				{
-					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1, .holdtime=g_fHudDuration[HudDuration])
 					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_PLANTER_SHOW_HUD", g_szName[g_eMVPlayer[iPlanter]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 				case MVP_HUD_MSG:
 				{
-					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1, .holdtime=g_fHudDuration[HudDuration])
 					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_PLANTER_SHOW_HUD", g_szName[g_eMVPlayer[iPlanter]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 			}
@@ -1291,12 +1298,12 @@ ShowMVP(WinScenario:iScenario)
 				}
 				case MVP_DHUD_MSG:
 				{
-					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1, .holdtime=g_fHudDuration[HudDuration])
 					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_eMVPlayer[iDefuser]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 				case MVP_HUD_MSG:
 				{
-					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1, .holdtime=g_fHudDuration[HudDuration])
 					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_DEFUSER_SHOW_HUD", g_szName[g_eMVPlayer[iDefuser]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 			}
@@ -1312,12 +1319,12 @@ ShowMVP(WinScenario:iScenario)
 				}
 				case MVP_DHUD_MSG:
 				{
-					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					set_dhudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1, .holdtime=g_fHudDuration[HudDuration])
 					show_dhudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_KILLER_SHOW_HUD", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED") , g_szPlayingTrack)
 				}
 				case MVP_HUD_MSG:
 				{
-					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1)
+					set_hudmessage(g_iHudColor[HudColorR], g_iHudColor[HudColorG], g_iHudColor[HudColorB], g_fHudPos[HudPosX], g_fHudPos[HudPosY], 1, .holdtime=g_fHudDuration[HudDuration])
 					show_hudmessage(0, "%s %L^n%L %s", g_szPrefix[PREFIX_HUD], LANG_SERVER, "MVP_KILLER_SHOW_HUD", g_szName[g_eMVPlayer[iTopKiller]], g_iKills[g_eMVPlayer[iTopKiller]], LANG_SERVER, (g_bExistTracks ? "MVP_PLAYING_TRACK" : "MVP_NO_TRACKS_LOADED"), g_szPlayingTrack)
 				}
 			}
