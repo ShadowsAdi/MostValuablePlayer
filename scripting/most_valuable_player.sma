@@ -38,7 +38,7 @@ const m_LastHitGroup = 					75
 #endif
 
 #define PLUGIN  						"Most Valuable Player"
-#define VERSION 						"2.8"
+#define VERSION 						"2.9"
 #define AUTHOR  						"Shadows Adi"
 
 #define IsPlayer(%1)					(1 <= %1 <= g_iMaxPlayers)
@@ -67,6 +67,7 @@ new const HUD_POSITION[]		= 		"HUD_POSITION"
 new const HUD_DURATION[]		=		"HUD_DURATION"
 new const MENU_COMMANDS[]		=		"MENU_COMMANDS"
 new const VIP_ACCESS[]			=		"VIP_ACCESS"
+new const MVP_RANDOM_TRACK[]	= 		"MVP_RANDOM_TRACK"
 new const LOG_FILE[]			= 		"mvp_errors.log"
 
 new MenuColors[][] 			= {"\r", "\y", "\d", "\w", "\R"}
@@ -165,6 +166,7 @@ new g_iSaveType
 new g_iSaveInstant
 new g_iMessageType
 new g_iVipFlag
+new bool:g_bPlayRandom
 
 new g_fHudPos[HudSettings]
 new g_fHudDuration[HudSettings]
@@ -461,6 +463,10 @@ public plugin_precache()
 					else if(equal(szString, VIP_ACCESS))
 					{
 						g_iVipFlag = FindCharPos(szValue)
+					}
+					else if(equal(szString, MVP_RANDOM_TRACK))
+					{
+						g_bPlayRandom = bool:clamp(str_to_num(szValue), 0, 1)
 					}
 				}
 			}
@@ -1342,6 +1348,11 @@ PlayTrack(iIndex)
 	if(!g_bExistTracks)
 	{
 		return
+	}
+
+	if(!g_bPlayRandom && g_iUserSelectedTrack[iIndex] == -1)
+	{
+		return 
 	}
 
 	new iPlayers[MAX_PLAYERS], iPlayer, iNum
